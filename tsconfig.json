@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "allowJs": false,
+        "allowSyntheticDefaultImports": false,
+        "declaration": false,
+        "declarationMap": false,
+        "forceConsistentCasingInFileNames": true,
+        "experimentalDecorators": true,
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ESNext"
+        ],
+        "plugins": [
+        ],
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "newLine": "lf",
+        "noEmitOnError": true,
+        "noErrorTruncation": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "strict": true,
+        "rootDir": "./",
+        "outDir": "./src/",
+        "resolveJsonModule": true,
+        "target": "ESNext"
+    },
+    "exclude": [
+    ]
+}
