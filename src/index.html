@@ -18,6 +18,31 @@
 <section id="editor">
 <section contenteditable></section>
 <section class="embed"></section>
+<form>
+    <fieldset>
+        <legend>Settings</legend>
+        <button type="submit">Set</button>
+        <ol>
+            <li>
+                <label for="speaker">Speaker</label>
+                <input id="speaker" name="speaker">
+            </li>
+            <li>
+                <label for="start-time">Start Time</label>
+                <input
+                    inputmode="decimal"
+                    id="start-time"
+                    name="start"
+                    required
+                >
+            </li>
+            <li>
+                <label for="end-time">End Time</label>
+                <input inputmode="decimal" id="end-time" name="end" required>
+            </li>
+        </ol>
+    </fieldset>
+</form>
 <script type="application/ld+json"></script>
 </section>
 <link rel="stylesheet" href="./css/editor.css">
