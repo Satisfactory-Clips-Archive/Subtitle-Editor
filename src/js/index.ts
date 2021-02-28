@@ -23,6 +23,15 @@ class VideoId
         this.type = type;
         this.id = id;
     }
+
+    toString() : string
+    {
+        if ('youtube' === this.type) {
+            return `https://youtu.be/${this.id}`;
+        }
+
+        return `https://clips.twitc.tv/${this.id}`;
+    }
 }
 
 const numeric = /^\d+(?:\.\d+)?$/;
@@ -237,6 +246,7 @@ function load_editor(id:VideoId) : void
         const jsonld = {
             "@context": "https://schema.org",
             "@type": "ItemList",
+            url: id + '',
             itemListElement: [
             ] as {
                 '@type': 'ListItem',
