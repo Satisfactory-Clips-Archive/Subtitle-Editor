@@ -342,6 +342,8 @@ function load_editor(id:VideoId) : void
 
     editor.addEventListener('input', update_jsonld);
 
+    update_jsonld();
+
     main.textContent = '';
     main.appendChild(node);
 }
