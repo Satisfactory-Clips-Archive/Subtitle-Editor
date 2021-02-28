@@ -7,6 +7,7 @@ const postcss_plugins = {
 const rename = require('gulp-rename');
 const inline_source = require('gulp-inline-source-html');
 const htmlmin = require('gulp-htmlmin');
+const brotli = require('gulp-brotli');
 
 gulp.task('typescript', () => {
 	return gulp.src('./src/**/*.ts').pipe(
@@ -45,10 +46,23 @@ gulp.task('build', () => {
 	).pipe(gulp.dest('./subtitle-editor/'));
 });
 
+gulp.task('compress', () => {
+	return gulp.src(
+		'./subtitle-editor/index.html'
+	).pipe(
+		brotli.compress({
+			quality: 11,
+		})
+	).pipe(
+		gulp.dest('./subtitle-editor/')
+	);
+});
+
 gulp.task('default', gulp.series(...[
 	gulp.parallel(...[
 		'typescript',
 		'postcss',
 	]),
 	'build',
+	'compress',
 ]));
