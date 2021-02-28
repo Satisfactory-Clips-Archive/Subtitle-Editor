@@ -19,6 +19,10 @@
                     <textarea name="xml" id="xml"></textarea>
                 </li>
                 <li>
+                    <label for="sbv">SBV</label>
+                    <textarea name="sbv" id="sbv"></textarea>
+                </li>
+                <li>
                     <label for="txt">Text</label>
                     <textarea name="txt" id="txt"></textarea>
                 </li>
@@ -52,6 +56,30 @@
             <li>
                 <label for="end-time">End Time</label>
                 <input inputmode="decimal" id="end-time" name="end" required>
+            </li>
+            <li>
+                <label for="position">Position</label>
+                <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    id="position"
+                    name="position"
+                >
+            </li>
+            <li>
+                <label for="alignment">Alignment</label>
+                <input
+                    pattern="^(?:start|center|end)?$"
+                    list="alignment-set"
+                    id="alignment"
+                    name="alignment"
+                >
+                <datalist id="alignment-set">
+                    <option value="start">
+                    <option value="center">
+                    <option value="end">
+                </datalist>
             </li>
         </ol>
     </fieldset>

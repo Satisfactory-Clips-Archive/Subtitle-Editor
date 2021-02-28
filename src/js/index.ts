@@ -1,23 +1,14 @@
-declare type ItemAsEvent = {
-    '@type': 'Event',
-    description: string,
-    startDate: string,
-    endDate: string,
-    performer?: {
-        '@type': 'Person',
-        name: string,
-    }[],
+declare type CaptionTime = {
+    start: string,
+    end: string,
 };
 
-declare type LineJsonLdType = {
-    '@type': 'Event',
-    description: string,
-    startDate: string,
-    endDate: string,
-    performer?: {
-        '@type': 'Person',
-        name: string,
-    }[],
+declare type CaptionItem = {
+    line: string,
+    time?: CaptionTime,
+    speaker?: string[],
+    position?:number,
+    align?:'start'|'center'|'end',
 };
 
 declare type JsonLdType = {
@@ -27,7 +18,7 @@ declare type JsonLdType = {
     itemListElement: {
         '@type': 'ListItem',
         position: number,
-        item: string|LineJsonLdType,
+        item: CaptionItem,
     }[],
 };
 
@@ -60,11 +51,15 @@ const numeric = /^\d+(?:\.\d+)?$/;
 
 class CaptionLineSetting
 {
-    #speaker:string;
+    #speaker:string = '';
 
-    #start:string;
+    #start:string = '';
 
-    #end:string;
+    #end:string = '';
+
+    #position:number|null = null;
+
+    alignment:'start'|'center'|'end'|null = null;
 
     get speaker() : string
     {
@@ -73,7 +68,13 @@ class CaptionLineSetting
 
     set speaker(value:string)
     {
-        this.#speaker = value.trim();
+        this.#speaker = value.trim().split(',').map(
+            (e) => {
+                return e.trim();
+            }
+        ).filter((e) => {
+            return '' !== e.trim();
+        }).join(',');
     }
 
     get start () : string {
@@ -106,17 +107,38 @@ class CaptionLineSetting
         this.#end = value;
     }
 
-    constructor(speaker:string, start:string, end:string)
+    get position() : number|null
     {
-        this.#start = start;
-        this.#end = end;
-        this.#speaker = speaker.split(',').map(
-            (e) => {
-                return e.trim();
-            }
-        ).filter((e) => {
-            return '' !== e.trim();
-        }).join(',');
+        return this.#position;
+    }
+
+    set position(value:number|null)
+    {
+        if (null === value) {
+            this.#position = null;
+        } else if ('number' === typeof(value)) {
+            this.#position = Math.max(0, value) | 0;
+        } else {
+            this.#position = Math.max(0, parseFloat(value)) | 0;
+        }
+    }
+
+    constructor(
+        speaker:string,
+        start:string,
+        end:string,
+        position:number|string|null = null,
+        alignment:'start'|'center'|'end'|null = null
+    ) {
+        this.start = start;
+        this.end = end;
+        this.speaker = speaker;
+        this.position = (
+            'string' === typeof(position)
+                ? parseFloat(position)
+                : position
+        );
+        this.alignment = alignment;
     }
 }
 
@@ -188,6 +210,7 @@ function load_await_url() : void
         const data = new FormData(form);
 
         const xml = data.get('xml') + '';
+        const sbv = data.get('sbv') + '';
         const txt = data.get('txt') + '';
 
         if (xml.length > 0) {
@@ -218,7 +241,27 @@ function load_await_url() : void
                     ];
                 }
             );
-        } else if (txt.length > 0) {            args[1] = txt.split("\n").map((line) => {
+        } else if (sbv.length > 0) {
+            args[1] = sbv.split(/(?:\r?\n){2}/).map((line) => {
+                const [time, caption] = line.split("\n");
+
+                const [start, end] = time.split(',').map(
+                    (time_string) : string => {
+                        const [hours, minutes, seconds] = time_string.split(
+                            ':'
+                        );
+                        return (
+                            (parseInt(hours, 10) * 3600)
+                            + (parseInt(minutes) * 60)
+                            + parseFloat(seconds)
+                        ).toString(10);
+                    }
+                );
+
+                return [caption.trim(), new CaptionLineSetting('', start, end)];
+            });
+        } else if (txt.length > 0) {
+            args[1] = txt.split("\n").map((line) => {
                 return [line.trim()];
             });
         }
@@ -319,7 +362,7 @@ function load_editor(
             ] as {
                 '@type': 'ListItem',
                 position: number,
-                item: any,
+                item: CaptionItem,
             }[]
         };
 
@@ -333,31 +376,34 @@ function load_editor(
             ) {
                 continue;
             } else if (currentNode instanceof Text) {
-                let item:string|ItemAsEvent = currentNode.textContent + '';
+                let item:CaptionItem = {
+                    line: currentNode.textContent + '',
+                };
 
                 if (settings.has(currentNode)) {
                     const setting = settings.get(
                         currentNode
                     ) as CaptionLineSetting;
 
-                    item = {
-                        '@type': 'Event',
-                        description: currentNode.textContent,
-                        startDate: `PT${setting.start}S`,
-                        endDate: `PT${setting.end}S`,
-                    } as ItemAsEvent;
+                    item.time = {
+                        start: `PT${setting.start}S`,
+                        end: `PT${setting.end}S`,
+                    };
 
                     if ('' !== setting.speaker) {
-                        item.performer = setting.speaker.split(',').map(
+                        item.speaker = setting.speaker.split(',').map(
                             (e) => {
                                 return e.trim();
                             }
-                        ).map((name) => {
-                            return {
-                                '@type': 'Person',
-                                name,
-                            };
-                        });
+                        );
+                    }
+
+                    if (null !== setting.position) {
+                        item.position = setting.position;
+                    }
+
+                    if (null !== setting.alignment) {
+                        item.align = setting.alignment;
                     }
                 }
 
@@ -378,34 +424,53 @@ function load_editor(
         return jsonld;
     }
 
+    function webvtt_time(value:number) : string
+    {
+        const minutes = Math.floor(value / 60);
+        const seconds = (value % 60).toFixed(3);
+
+        return `${
+            minutes.toString(10).padStart(2, '0')}:${
+                seconds.split('.')[0].length < 2
+                    ? `0${seconds}`
+                    : seconds
+            }`;
+    }
+
     function update_webvtt(jsonld:JsonLdType) : void
     {
         (webvtt as HTMLTextAreaElement).textContent = `WEBVTT${
             "\n\n"
         }${jsonld.itemListElement.filter((line) => {
-            return 'string' !== typeof(line.item);
-        }).map((line) : LineJsonLdType => {
-            return line.item as LineJsonLdType;
+            return 'time' in line.item;
         }).map((line, index) => {
-            const start = parseFloat(line.startDate.split('T')[1]);
-            const end = parseFloat(line.endDate.split('T')[1]);
+            const start = parseFloat(
+                (line.item.time as CaptionTime).start.split('T')[1]
+            );
+            const end = parseFloat(
+                (line.item.time as CaptionTime).end.split('T')[1]
+            );
 
             return `${
                 index
             }${
                 "\n"
             }${
-                Math.floor(start / 60).toString(10).padStart(2, '0')
-            }:${
-                (start % 60).toString(10)
-            } ---> ${
-                Math.floor(end / 60).toString(10).padStart(2, '0')
-            }:${
-                (end % 60).toString(10)
+                webvtt_time(start)
+            } --> ${
+                webvtt_time(end)
+            }${
+                'number' === typeof(line.item.position)
+                    ? ` position:${line.item.position | 0}%`
+                    : ''
+            }${
+                'string' === typeof(line.item.align)
+                    ? ` align:${line.item.align}`
+                    : ''
             }${
                 "\n"
             }${
-                line.description
+                line.item.line
             }${
                 "\n"
             }`
@@ -442,6 +507,10 @@ function load_editor(
         }
 
         const data = new FormData(form);
+        const position = (data.get('position') || null) as string|null;
+        const align = (
+            data.get('alignment') || null
+        ) as 'start'|'center'|'end'|null;
         const setting = settings.get(maybe) || new CaptionLineSetting(
             '',
             '0',
@@ -451,8 +520,12 @@ function load_editor(
         setting.speaker = data.get('speaker') + '';
         setting.start = data.get('start') + '';
         setting.end = data.get('end') + '';
+        setting.position = null !== position ? parseFloat(position) : null;
+        setting.alignment = align;
 
         settings.set(maybe, setting);
+
+        console.log(setting);
 
         update_webvtt(update_jsonld());
     });
@@ -460,8 +533,6 @@ function load_editor(
     editor.addEventListener('input', () => {
         update_webvtt(update_jsonld());
     });
-
-    console.log(captions);
 
     captions.forEach((e) => {
         const [line, setting] = e;
