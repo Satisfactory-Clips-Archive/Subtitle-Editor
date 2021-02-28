@@ -1,3 +1,4 @@
 /node_modules/
 /src/js/*.js
 /src/css/editor.css
+/subtitle-editor/

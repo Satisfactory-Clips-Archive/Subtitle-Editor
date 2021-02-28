@@ -5,6 +5,8 @@ const postcss_plugins = {
     nested: require('postcss-nested'),
 };
 const rename = require('gulp-rename');
+const inline_source = require('gulp-inline-source-html');
+const htmlmin = require('gulp-htmlmin');
 
 gulp.task('typescript', () => {
     return gulp.src('./src/**/*.ts').pipe(
@@ -26,9 +28,27 @@ gulp.task('postcss', () => {
     ).pipe(gulp.dest('./src/'));
 });
 
+gulp.task('build', () => {
+    return gulp.src('./src/index.html').pipe(
+        inline_source()
+    ).pipe(
+		htmlmin({
+			collapseInlineTagWhitespace: false,
+			collapseWhitespace: true,
+			minifyCSS: true,
+			minifyJs: true,
+			removeAttributeQuotes: true,
+			preserveLineBreaks: false,
+			removeComments: true,
+			useShortDoctype: true,
+		})
+    ).pipe(gulp.dest('./subtitle-editor/'));
+});
+
 gulp.task('default', gulp.series(...[
     gulp.parallel(...[
         'typescript',
         'postcss',
     ]),
+    'build',
 ]));

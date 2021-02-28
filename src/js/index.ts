@@ -165,7 +165,7 @@ function clone_template(id:string) : DocumentFragment
 
 function load_await_url() : void
 {
-    const await_url = clone_template('submit-url');
+    const await_url = clone_template('submit-url-screen');
     const url = await_url.querySelector('input') as HTMLInputElement|undefined;
     const form = await_url.querySelector('form') as HTMLFormElement|undefined;
     const regex = /^(?:https?:\/\/(?:www\.)?)?(?:(?:youtu\.be\/|youtube\.com\/watch\?v=)(?<youtubeid>[a-zA-Z0-9_\-]{11})|clips\.twitch\.tv\/(?<twitchid>[a-zA-Z0-9]+))/;
@@ -524,8 +524,6 @@ function load_editor(
         setting.alignment = align;
 
         settings.set(maybe, setting);
-
-        console.log(setting);
 
         update_webvtt(update_jsonld());
     });
