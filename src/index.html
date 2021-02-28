@@ -11,6 +11,19 @@
         <label for="submit-url">Video URL</label>
         <input id="submit-url" type="url" required>
         <button type="submit">Load</button>
+        <fieldset>
+            <legend>Use Subtitles</legend>
+            <ul>
+                <li>
+                    <label for="xml">XML</label>
+                    <textarea name="xml" id="xml"></textarea>
+                </li>
+                <li>
+                    <label for="txt">Text</label>
+                    <textarea name="txt" id="txt"></textarea>
+                </li>
+            </ul>
+        </fieldset>
     </form>
 </section>
 </template>
@@ -43,7 +56,15 @@
         </ol>
     </fieldset>
 </form>
-<script type="application/ld+json"></script>
+<section id="export">
+    <details open>
+        <summary>JSON-LD</summary>
+        <script id="json-ld" type="application/ld+json"></script>
+    </details>
+    <details>
+        <summary>WebVTT</summary>
+        <textarea id="webvtt" readonly></textarea>
+    </details>
 </section>
 <link rel="stylesheet" href="./css/editor.css">
 </template>

@@ -9,6 +9,28 @@ declare type ItemAsEvent = {
     }[],
 };
 
+declare type LineJsonLdType = {
+    '@type': 'Event',
+    description: string,
+    startDate: string,
+    endDate: string,
+    performer?: {
+        '@type': 'Person',
+        name: string,
+    }[],
+};
+
+declare type JsonLdType = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    url: string,
+    itemListElement: {
+        '@type': 'ListItem',
+        position: number,
+        item: string|LineJsonLdType,
+    }[],
+};
+
 const templates:{[key:string]:HTMLTemplateElement} = {};
 const main = document.body.querySelector('main') as HTMLElement;
 
@@ -161,19 +183,63 @@ function load_await_url() : void
             );
         }
 
-        load_editor(id);
+        const args:[VideoId, [string, CaptionLineSetting?][]?] = [id];
+
+        const data = new FormData(form);
+
+        const xml = data.get('xml') + '';
+        const txt = data.get('txt') + '';
+
+        if (xml.length > 0) {
+            const doc = (new DOMParser()).parseFromString(
+                xml,
+                'application/xml'
+            );
+
+            args[1] = [...doc.querySelectorAll('transcript > text')].map(
+                (line) : [string, CaptionLineSetting?] => {
+                    const start = line.getAttribute('start') + '';
+                    const end = (
+                        parseFloat(start)
+                        + parseFloat(
+                            line.getAttribute('dur') + ''
+                        )
+                    );
+                    const placeholder = document.createElement('span');
+                    placeholder.innerHTML = line.textContent + '';
+
+                    return [
+                        placeholder.textContent as string,
+                        new CaptionLineSetting(
+                            '',
+                            start,
+                            end.toString(10)
+                        )
+                    ];
+                }
+            );
+        } else if (txt.length > 0) {            args[1] = txt.split("\n").map((line) => {
+                return [line.trim()];
+            });
+        }
+
+        load_editor(...args);
     });
 
     main.textContent = '';
     main.appendChild(await_url);
 }
 
-function load_editor(id:VideoId) : void
+function load_editor(
+    id:VideoId,
+    captions:[string, CaptionLineSetting?][] = []
+) : void
 {
     const node = clone_template('editor');
     const editor = node.querySelector('[contenteditable]') as HTMLElement|null;
     const embed = node.querySelector('.embed') as HTMLElement|null;
     const script = node.querySelector('script') as HTMLScriptElement|null;
+    const webvtt = node.querySelector('#webvtt') as HTMLTextAreaElement|null;
     const form = node.querySelector('form') as HTMLFormElement|null;
     const settings:WeakMap<Node, CaptionLineSetting> = new WeakMap();
     let caption_line:Text|null;
@@ -183,6 +249,7 @@ function load_editor(id:VideoId) : void
         || ! embed
         || ! script
         || ! form
+        || ! webvtt
     ) {
         throw new Error(
             'Required components of editor not found!'
@@ -237,13 +304,14 @@ function load_editor(id:VideoId) : void
 
     embed.appendChild(iframe);
 
-    function update_jsonld() {
+    function update_jsonld() : JsonLdType
+    {
         const iterator = document.createNodeIterator(
             editor as HTMLElement,
             NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
         );
 
-        const jsonld = {
+        const jsonld:JsonLdType = {
             "@context": "https://schema.org",
             "@type": "ItemList",
             url: id + '',
@@ -259,7 +327,10 @@ function load_editor(id:VideoId) : void
         let index = 0;
 
         while (currentNode = iterator.nextNode()) {
-            if (currentNode === editor) {
+            if (
+                currentNode === editor
+                || '' === (currentNode.textContent?.trim() + '')
+            ) {
                 continue;
             } else if (currentNode instanceof Text) {
                 let item:string|ItemAsEvent = currentNode.textContent + '';
@@ -303,6 +374,42 @@ function load_editor(id:VideoId) : void
         (
             script as HTMLScriptElement
         ).textContent = JSON.stringify(jsonld, null, "\t");
+
+        return jsonld;
+    }
+
+    function update_webvtt(jsonld:JsonLdType) : void
+    {
+        (webvtt as HTMLTextAreaElement).textContent = `WEBVTT${
+            "\n\n"
+        }${jsonld.itemListElement.filter((line) => {
+            return 'string' !== typeof(line.item);
+        }).map((line) : LineJsonLdType => {
+            return line.item as LineJsonLdType;
+        }).map((line, index) => {
+            const start = parseFloat(line.startDate.split('T')[1]);
+            const end = parseFloat(line.endDate.split('T')[1]);
+
+            return `${
+                index
+            }${
+                "\n"
+            }${
+                Math.floor(start / 60).toString(10).padStart(2, '0')
+            }:${
+                (start % 60).toString(10)
+            } ---> ${
+                Math.floor(end / 60).toString(10).padStart(2, '0')
+            }:${
+                (end % 60).toString(10)
+            }${
+                "\n"
+            }${
+                line.description
+            }${
+                "\n"
+            }`
+        }).join("\n")}`;
     }
 
     document.addEventListener('selectionchange', (e) => {
@@ -347,12 +454,29 @@ function load_editor(id:VideoId) : void
 
         settings.set(maybe, setting);
 
-        update_jsonld();
+        update_webvtt(update_jsonld());
     });
 
-    editor.addEventListener('input', update_jsonld);
+    editor.addEventListener('input', () => {
+        update_webvtt(update_jsonld());
+    });
 
-    update_jsonld();
+    console.log(captions);
+
+    captions.forEach((e) => {
+        const [line, setting] = e;
+
+        const line_node = document.createTextNode(line);
+
+        if (setting) {
+            settings.set(line_node, setting);
+        }
+
+        editor.appendChild(line_node);
+        editor.appendChild(document.createTextNode("\n"));
+    });
+
+    update_webvtt(update_jsonld());
 
     main.textContent = '';
     main.appendChild(node);

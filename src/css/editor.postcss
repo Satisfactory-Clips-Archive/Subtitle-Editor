@@ -19,6 +19,7 @@
     [contenteditable]
     {
         grid-area: 1 / 1 / 4 / 2 ;
+        white-space: pre-wrap ;
     }
 
     .embed
@@ -38,10 +39,34 @@
         grid-area: 2 / 2 / 3 / 3 ;
     }
 
+    textarea,
     script
     {
         display: block ;
-        grid-area: 3 / 2 / 4 / 3 ;
         white-space: pre-wrap ;
+    }
+
+    #export
+    {
+        display: block ;
+        grid-area: 3 / 2 / 4 / 3 ;
+        position: relative ;
+
+        details
+        {
+            display: inline-block ;
+            height: 1.5rem ;
+
+            > summary + *
+            {
+                position: absolute ;
+                top: 1.5rem ;
+                left: 0 ;
+                right: 0 ;
+                bottom: 0 ;
+                width: 100% ;
+                height: calc(100% - 1.5rem) ;
+            }
+        }
     }
 }
