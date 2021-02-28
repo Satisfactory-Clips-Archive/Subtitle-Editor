@@ -285,7 +285,7 @@ function load_editor(
 	const webvtt = node.querySelector('#webvtt') as HTMLTextAreaElement|null;
 	const form = node.querySelector('form') as HTMLFormElement|null;
 	const settings:WeakMap<Node, CaptionLineSetting> = new WeakMap();
-	let caption_line:Text|null;
+	let caption_line:Text|HTMLElement|null;
 
 	if (
 		! editor
@@ -488,7 +488,13 @@ function load_editor(
 	document.addEventListener('selectionchange', (e) => {
 		const maybe = getSelection()?.anchorNode as Text|null;
 
-		if (maybe && maybe.parentNode === editor) {
+		if (
+			maybe
+			&& (
+				maybe.parentNode === editor
+				|| maybe.parentNode?.parentNode === editor
+			)
+		) {
 			caption_line = maybe;
 
 			if (settings.has(maybe)) {
@@ -510,7 +516,15 @@ function load_editor(
 
 		const maybe = caption_line;
 
-		if ( ! maybe || maybe.parentNode !== editor) {
+		if (
+			! (
+				maybe
+				&& (
+					maybe.parentNode === editor
+					|| maybe.parentNode?.parentNode === editor
+				)
+			)
+		) {
 			console.log('skipping processing');
 
 			return;
