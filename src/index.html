@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Subtitle Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="./css/index.css">
 <template id="submit-url">
 <section id="submit-url-form">
     <form>
@@ -11,6 +13,14 @@
         <button type="submit">Load</button>
     </form>
 </section>
+</template>
+<template id="editor">
+<section id="editor">
+<section contenteditable></section>
+<section class="embed"></section>
+<script type="application/ld+json"></script>
+</section>
+<link rel="stylesheet" href="./css/editor.css">
 </template>
 </head>
 <body>
