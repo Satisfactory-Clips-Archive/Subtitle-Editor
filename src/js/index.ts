@@ -308,11 +308,19 @@ function load_editor(
 	const form_end = (
 		form.querySelector('#end-time') as HTMLInputElement|null
 	);
+	const form_position = (
+		form.querySelector('#position') as HTMLInputElement|null
+	);
+	const form_alignment = (
+		form.querySelector('#alignment') as HTMLInputElement|null
+	);
 
 	if (
 		! form_speaker
 		|| ! form_start
 		|| ! form_end
+		|| ! form_position
+		|| ! form_alignment
 	) {
 		throw new Error(
 			'Required components of form not found!'
@@ -489,6 +497,8 @@ function load_editor(
 				form_speaker.value = setting.speaker;
 				form_start.value = setting.start;
 				form_end.value = setting.end;
+				form_position.value = setting.position?.toString(10) || '';
+				form_alignment.value = setting.alignment || '';
 			} else {
 				form.reset();
 			}
