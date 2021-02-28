@@ -8,28 +8,28 @@
 <link rel="stylesheet" href="./css/index.css" inline>
 <template id="submit-url-screen">
 <section id="submit-url-form">
-    <form>
-        <label for="submit-url">Video URL</label>
-        <input id="submit-url" type="url" required>
-        <button type="submit">Load</button>
-        <fieldset>
-            <legend>Use Subtitles</legend>
-            <ul>
-                <li>
-                    <label for="xml">XML</label>
-                    <textarea name="xml" id="xml"></textarea>
-                </li>
-                <li>
-                    <label for="sbv">SBV</label>
-                    <textarea name="sbv" id="sbv"></textarea>
-                </li>
-                <li>
-                    <label for="txt">Text</label>
-                    <textarea name="txt" id="txt"></textarea>
-                </li>
-            </ul>
-        </fieldset>
-    </form>
+	<form>
+		<label for="submit-url">Video URL</label>
+		<input id="submit-url" type="url" required>
+		<button type="submit">Load</button>
+		<fieldset>
+			<legend>Use Subtitles</legend>
+			<ul>
+				<li>
+					<label for="xml">XML</label>
+					<textarea name="xml" id="xml"></textarea>
+				</li>
+				<li>
+					<label for="sbv">SBV</label>
+					<textarea name="sbv" id="sbv"></textarea>
+				</li>
+				<li>
+					<label for="txt">Text</label>
+					<textarea name="txt" id="txt"></textarea>
+				</li>
+			</ul>
+		</fieldset>
+	</form>
 </section>
 </template>
 <template id="editor">
@@ -37,83 +37,83 @@
 <section contenteditable></section>
 <section class="embed"></section>
 <form>
-    <fieldset>
-        <legend>Settings</legend>
-        <button type="submit">Set</button>
-        <ol>
-            <li>
-                <label for="speaker">Speaker</label>
-                <input id="speaker" name="speaker">
-            </li>
-            <li>
-                <label for="start-time">Start Time</label>
-                <input
-                    inputmode="decimal"
-                    id="start-time"
-                    name="start"
-                    required
-                >
-            </li>
-            <li>
-                <label for="end-time">End Time</label>
-                <input inputmode="decimal" id="end-time" name="end" required>
-            </li>
-            <li>
-                <label for="position">Position</label>
-                <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    id="position"
-                    name="position"
-                >
-            </li>
-            <li>
-                <label for="alignment">Alignment</label>
-                <input
-                    pattern="^(?:start|center|end)?$"
-                    list="alignment-set"
-                    id="alignment"
-                    name="alignment"
-                >
-                <datalist id="alignment-set">
-                    <option value="start">
-                    <option value="center">
-                    <option value="end">
-                </datalist>
-            </li>
-        </ol>
-    </fieldset>
+	<fieldset>
+		<legend>Settings</legend>
+		<button type="submit">Set</button>
+		<ol>
+			<li>
+				<label for="speaker">Speaker</label>
+				<input id="speaker" name="speaker">
+			</li>
+			<li>
+				<label for="start-time">Start Time</label>
+				<input
+					inputmode="decimal"
+					id="start-time"
+					name="start"
+					required
+				>
+			</li>
+			<li>
+				<label for="end-time">End Time</label>
+				<input inputmode="decimal" id="end-time" name="end" required>
+			</li>
+			<li>
+				<label for="position">Position</label>
+				<input
+					type="number"
+					min="0"
+					max="100"
+					id="position"
+					name="position"
+				>
+			</li>
+			<li>
+				<label for="alignment">Alignment</label>
+				<input
+					pattern="^(?:start|center|end)?$"
+					list="alignment-set"
+					id="alignment"
+					name="alignment"
+				>
+				<datalist id="alignment-set">
+					<option value="start">
+					<option value="center">
+					<option value="end">
+				</datalist>
+			</li>
+		</ol>
+	</fieldset>
 </form>
 <section id="export">
-    <details open>
-        <summary>JSON-LD</summary>
-        <script id="json-ld" type="application/ld+json"></script>
-    </details>
-    <details>
-        <summary>WebVTT</summary>
-        <textarea id="webvtt" readonly></textarea>
-    </details>
+	<details open>
+		<summary>JSON-LD</summary>
+		<script id="json-ld" type="application/ld+json"></script>
+	</details>
+	<details>
+		<summary>WebVTT</summary>
+		<textarea id="webvtt" readonly></textarea>
+	</details>
 </section>
 <link rel="stylesheet" href="./css/editor.css" inline>
 </template>
 </head>
 <body>
 <header>
-    <h1>Subtitle Editor</h1>
+	<h1>Subtitle Editor</h1>
 </header>
 <main>
-    <section id="not-ready">
-        <header>
-            <h1>JavaScript Required</h1>
-        </header>
-        <section>
-            <p>JavaScript is required for this application to function.</p>
-            <p>If you can still see this notice,
-                then the application is either not ready,
-                or your browser is not supported.</p>
-        </section>
-    </section>
+	<section id="not-ready">
+		<header>
+			<h1>JavaScript Required</h1>
+		</header>
+		<section>
+			<p>JavaScript is required for this application to function.</p>
+			<p>If you can still see this notice,
+				then the application is either not ready,
+				or your browser is not supported.</p>
+		</section>
+	</section>
 </main>
 </body>
 <script src="./js/index.js" async defer inline></script>
