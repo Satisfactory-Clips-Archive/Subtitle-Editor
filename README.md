@@ -4,6 +4,9 @@ Subtitle editor for [archive.satisfactory.video](https://archive.satisfactory.vi
 
 # Changelog
 
+## 2020-03-01
+* allow import of the custom json format
+
 ## 2020-02-28
 * finished basic implementation
 

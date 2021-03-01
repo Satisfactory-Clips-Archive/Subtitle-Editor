@@ -16,6 +16,10 @@
 			<legend>Use Subtitles</legend>
 			<ul>
 				<li>
+					<label for="json">JSON</label>
+					<textarea name="json" id="json"></textarea>
+				</li>
+				<li>
 					<label for="xml">XML</label>
 					<textarea name="xml" id="xml"></textarea>
 				</li>
@@ -88,7 +92,7 @@
 <section id="export">
 	<details open>
 		<summary>JSON-LD</summary>
-		<script id="json-ld" type="application/ld+json"></script>
+		<textarea id="json-ld"></textarea>
 	</details>
 	<details>
 		<summary>WebVTT</summary>
@@ -116,5 +120,5 @@
 	</section>
 </main>
 </body>
-<script src="./js/index.js" async defer inline></script>
+<script src="./js/index.js" async defer></script>
 </html>

@@ -1,0 +1,146 @@
+{
+	"$id": "http://tools.satisfactory.video/subtitle-editor/schema.json",
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"required": [
+		"@context",
+		"@type",
+		"inLanguage",
+		"url",
+		"about"
+	],
+	"title": "Schema for transcriptions of videos listed on archive.satisfactory.video",
+	"type": "object",
+	"properties": {
+		"@context": {
+			"const": "https://schema.org",
+			"type": "string"
+		},
+		"@type": {
+			"const": "CreativeWork",
+			"type": "string"
+		},
+		"inLanguage": {
+			"description": "An IETF BCP 47 language code for the overall transcription",
+			"examples": [
+				"en"
+			],
+			"type": "string"
+		},
+		"url": {
+			"description": "The URL of the video the transcription represents",
+			"type": "string"
+		},
+		"about": {
+			"required": [
+				"@type",
+				"itemListElement"
+			],
+			"type": "object",
+			"properties": {
+				"@type": {
+					"const": "ItemList",
+					"type": "string"
+				},
+				"itemListElement": {
+					"type": "array",
+					"additionalItems": true,
+					"items": {
+						"required": [
+							"@type",
+							"position",
+							"item"
+						],
+						"type": "object",
+						"properties": {
+							"@type": {
+								"const": "ListItem",
+								"type": "string"
+							},
+							"position": {
+								"description": "WebVTT-supported position",
+								"maximum": 100,
+								"minimum": 0,
+								"type": "integer"
+							},
+							"item": {
+								"required": [
+									"line",
+									"time"
+								],
+								"type": "object",
+								"properties": {
+									"line": {
+										"description": "The text uttered by the speaker, or otherwise a textual representation of the usable audio occurring at the specified moment in the video.",
+										"type": "string"
+									},
+									"time": {
+										"description": "Start & End times of the utterance",
+										"required": [
+											"start",
+											"end"
+										],
+										"type": "object",
+										"properties": {
+											"start": {
+												"description": "The ISO 8601 duration of the start of the utterance.",
+												"examples": [
+													"PT0.08S"
+												],
+												"pattern": "^PT\\d+(?:\\.\\d+)?S$",
+												"type": "string"
+											},
+											"end": {
+												"description": "The ISO 8601 duration for the end of the utterance.",
+												"examples": [
+													"PT2.56S"
+												],
+												"pattern": "^PT\\d+(?:\\.\\d+)?S$",
+												"type": "string"
+											}
+										},
+										"additionalProperties": false
+									},
+									"speaker": {
+										"description": "The name of the person speaking",
+										"examples": [
+											[
+												"Jace"
+											],
+											[
+												"Snutt"
+											],
+											[
+												"Jace",
+												"Snutt"
+											]
+										],
+										"type": "array",
+										"additionalItems": true,
+										"items": {
+											"minLength": 1,
+											"uniqueItems": true,
+											"type": "string"
+										}
+									},
+									"align": {
+										"description": "WebVTT-supported alignment hint",
+										"enum": [
+											"start",
+											"center",
+											"end"
+										],
+										"type": "string"
+									}
+								},
+								"additionalProperties": false
+							}
+						},
+						"additionalProperties": false
+					}
+				}
+			},
+			"additionalProperties": false
+		}
+	},
+	"additionalProperties": false
+}

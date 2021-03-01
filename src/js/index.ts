@@ -1,3 +1,6 @@
+import {default as schema} from '../schema.json';
+import Ajv from 'ajv';
+
 declare type CaptionTime = {
 	start: string,
 	end: string,
@@ -11,10 +14,8 @@ declare type CaptionItem = {
 	align?:'start'|'center'|'end',
 };
 
-declare type JsonLdType = {
-	"@context": "https://schema.org",
+declare type JsonLdTypeCaptions = {
 	"@type": "ItemList",
-	url: string,
 	itemListElement: {
 		'@type': 'ListItem',
 		position: number,
@@ -22,8 +23,24 @@ declare type JsonLdType = {
 	}[],
 };
 
+declare type JsonLdTypeTranslation<T> = {
+	"@type": "CreativeWork",
+	about: JsonLdTypeCaptions,
+	inLanguage: T&string,
+};
+
+declare type JsonLdType = JsonLdTypeTranslation<'en'|'en-GB'|'en-US'>&{
+	"@context": "https://schema.org",
+	"@type": "CreativeWork",
+	about: JsonLdTypeCaptions,
+	url: string,
+	inLanguage:'en'|'en-GB'|'en-US',
+	translationOfWork?:JsonLdTypeTranslation<string>[]
+};
+
 const templates:{[key:string]:HTMLTemplateElement} = {};
 const main = document.body.querySelector('main') as HTMLElement;
+const validator = (new Ajv()).compile(schema);
 
 class VideoId
 {
@@ -51,24 +68,24 @@ const numeric = /^\d+(?:\.\d+)?$/;
 
 class CaptionLineSetting
 {
-	#speaker:string = '';
+	private _speaker:string = '';
 
-	#start:string = '';
+	private _start:string = '';
 
-	#end:string = '';
+	private _end:string = '';
 
-	#position:number|null = null;
+	private _position:number|null = null;
 
 	alignment:'start'|'center'|'end'|null = null;
 
 	get speaker() : string
 	{
-		return this.#speaker;
+		return this._speaker;
 	}
 
 	set speaker(value:string)
 	{
-		this.#speaker = value.trim().split(',').map(
+		this._speaker = value.trim().split(',').map(
 			(e) => {
 				return e.trim();
 			}
@@ -78,7 +95,7 @@ class CaptionLineSetting
 	}
 
 	get start () : string {
-		return this.#start;
+		return this._start;
 	}
 
 	set start(value:string)
@@ -89,11 +106,11 @@ class CaptionLineSetting
 			);
 		}
 
-		this.#start = value;
+		this._start = value;
 	}
 
 	get end () : string {
-		return this.#end;
+		return this._end;
 	}
 
 	set end(value:string)
@@ -104,22 +121,22 @@ class CaptionLineSetting
 			);
 		}
 
-		this.#end = value;
+		this._end = value;
 	}
 
 	get position() : number|null
 	{
-		return this.#position;
+		return this._position;
 	}
 
 	set position(value:number|null)
 	{
 		if (null === value) {
-			this.#position = null;
+			this._position = null;
 		} else if ('number' === typeof(value)) {
-			this.#position = Math.max(0, value) | 0;
+			this._position = Math.max(0, value) | 0;
 		} else {
-			this.#position = Math.max(0, parseFloat(value)) | 0;
+			this._position = Math.max(0, parseFloat(value)) | 0;
 		}
 	}
 
@@ -179,7 +196,7 @@ function load_await_url() : void
 	}
 
 	url.setAttribute('pattern', regex.toString().substr(1).replace(/\/$/, ''));
-	form.addEventListener('submit', (e) => {
+	form.addEventListener('submit', async (e) => {
 		e.preventDefault();
 
 		const match = regex.exec(url.value) as null|{groups: {
@@ -209,11 +226,44 @@ function load_await_url() : void
 
 		const data = new FormData(form);
 
+		const json = data.get('json') + '';
 		const xml = data.get('xml') + '';
 		const sbv = data.get('sbv') + '';
 		const txt = data.get('txt') + '';
 
-		if (xml.length > 0) {
+		if (json.length > 0) {
+			let json_data:JsonLdType;
+
+			try {
+				json_data = JSON.parse(json);
+
+				await validator(json_data);
+
+				args[1] = json_data.about.itemListElement.sort((a, b) => {
+					return a.position - b.position;
+				}).map((line_data) => {
+					const start = (line_data.item.time as CaptionTime).start;
+					const end = (line_data.item.time as CaptionTime).end;
+
+					return [line_data.item.line, new CaptionLineSetting(
+						(line_data.item.speaker || []).join(', '),
+						start.replace(/^PT(.+)S$/, '$1'),
+						end.replace(/^PT(.+)S$/, '$1'),
+						line_data.item.position || null,
+						line_data.item.align || null
+					)];
+				});
+			} catch (error) {
+				console.error(error);
+
+				if (validator.errors) {
+					console.error(validator.errors);
+					throw new Error('Could not parse JSON')
+				}
+
+				throw new Error('Could not load JSON');
+			}
+		} else if (xml.length > 0) {
 			const doc = (new DOMParser()).parseFromString(
 				xml,
 				'application/xml'
@@ -243,7 +293,7 @@ function load_await_url() : void
 			);
 		} else if (sbv.length > 0) {
 			args[1] = sbv.split(/(?:\r?\n){2}/).map((line) => {
-				const [time, caption] = line.split("\n");
+				const [time, ...caption] = line.split(/\r?\n/);
 
 				const [start, end] = time.split(',').map(
 					(time_string) : string => {
@@ -258,7 +308,7 @@ function load_await_url() : void
 					}
 				);
 
-				return [caption.trim(), new CaptionLineSetting('', start, end)];
+				return [caption.join("\n").trim(), new CaptionLineSetting('', start, end)];
 			});
 		} else if (txt.length > 0) {
 			args[1] = txt.split("\n").map((line) => {
@@ -281,7 +331,7 @@ function load_editor(
 	const node = clone_template('editor');
 	const editor = node.querySelector('[contenteditable]') as HTMLElement|null;
 	const embed = node.querySelector('.embed') as HTMLElement|null;
-	const script = node.querySelector('script') as HTMLScriptElement|null;
+	const script = node.querySelector('#json-ld') as HTMLTextAreaElement|null;
 	const webvtt = node.querySelector('#webvtt') as HTMLTextAreaElement|null;
 	const form = node.querySelector('form') as HTMLFormElement|null;
 	const settings:WeakMap<Node, CaptionLineSetting> = new WeakMap();
@@ -364,14 +414,18 @@ function load_editor(
 
 		const jsonld:JsonLdType = {
 			"@context": "https://schema.org",
-			"@type": "ItemList",
+			'@type': 'CreativeWork',
+			inLanguage: 'en',
 			url: id + '',
+			about: {
+			"@type": "ItemList",
 			itemListElement: [
 			] as {
 				'@type': 'ListItem',
 				position: number,
 				item: CaptionItem,
 			}[]
+			}
 		};
 
 		let currentNode;
@@ -415,7 +469,7 @@ function load_editor(
 					}
 				}
 
-				jsonld.itemListElement.push({
+				jsonld.about.itemListElement.push({
 					'@type': 'ListItem',
 					position: index,
 					item,
@@ -426,7 +480,7 @@ function load_editor(
 		}
 
 		(
-			script as HTMLScriptElement
+			script as HTMLTextAreaElement
 		).textContent = JSON.stringify(jsonld, null, "\t");
 
 		return jsonld;
@@ -449,7 +503,7 @@ function load_editor(
 	{
 		(webvtt as HTMLTextAreaElement).textContent = `WEBVTT${
 			"\n\n"
-		}${jsonld.itemListElement.filter((line) => {
+		}${jsonld.about.itemListElement.filter((line) => {
 			return 'time' in line.item;
 		}).map((line, index) => {
 			const start = parseFloat(
