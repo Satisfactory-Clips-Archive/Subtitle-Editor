@@ -11,6 +11,7 @@ declare type CaptionItem = {
 	time?: CaptionTime,
 	speaker?: string[],
 	position?:number,
+	size?:number,
 	align?:'start'|'center'|'end',
 };
 
@@ -76,6 +77,8 @@ class CaptionLineSetting
 
 	private _position:number|null = null;
 
+	private _size:number|null = null;
+
 	alignment:'start'|'center'|'end'|null = null;
 
 	get speaker() : string
@@ -140,11 +143,28 @@ class CaptionLineSetting
 		}
 	}
 
+	get size() : number|null
+	{
+		return this._size;
+	}
+
+	set size(value:number|null)
+	{
+		if (null === value) {
+			this._size = null;
+		} else if ('number' === typeof(value)) {
+			this._size = Math.max(0, value) | 0;
+		} else {
+			this._size = Math.max(0, parseFloat(value)) | 0;
+		}
+	}
+
 	constructor(
 		speaker:string,
 		start:string,
 		end:string,
 		position:number|string|null = null,
+		size:number|string|null = null,
 		alignment:'start'|'center'|'end'|null = null
 	) {
 		this.start = start;
@@ -154,6 +174,11 @@ class CaptionLineSetting
 			'string' === typeof(position)
 				? parseFloat(position)
 				: position
+		);
+		this.size = (
+			'string' === typeof(size)
+				? parseFloat(size)
+				: size
 		);
 		this.alignment = alignment;
 	}
@@ -249,7 +274,8 @@ function load_await_url() : void
 						(line_data.item.speaker || []).join(', '),
 						start.replace(/^PT(.+)S$/, '$1'),
 						end.replace(/^PT(.+)S$/, '$1'),
-						line_data.item.position || null,
+						line_data.item.position ?? null,
+						line_data.item.size ?? null,
 						line_data.item.align || null
 					)];
 				});
@@ -339,6 +365,7 @@ function load_editor(
 	let speakers:string[] = [];
 	let previous_speakers:string[] = [];
 	const last_speaker_positions:{[key:string]: number} = {};
+	const last_speaker_sizes:{[key:string]: number} = {};
 	const last_speaker_alignment:{[key:string]: string} = {};
 
 	if (
@@ -365,6 +392,9 @@ function load_editor(
 	const form_position = (
 		form.querySelector('#position') as HTMLInputElement|null
 	);
+	const form_size = (
+		form.querySelector('#size') as HTMLInputElement|null
+	);
 	const form_alignment = (
 		form.querySelector('#alignment') as HTMLInputElement|null
 	);
@@ -386,6 +416,7 @@ function load_editor(
 		|| ! form_start
 		|| ! form_end
 		|| ! form_position
+		|| ! form_size
 		|| ! form_alignment
 		|| ! speaker_list
 		|| ! line_output
@@ -489,6 +520,10 @@ function load_editor(
 						item.position = setting.position;
 					}
 
+					if (null !== setting.size) {
+						item.size = setting.size;
+					}
+
 					if (null !== setting.alignment) {
 						item.align = setting.alignment;
 					}
@@ -588,6 +623,10 @@ function load_editor(
 					? ` position:${line.item.position | 0}%`
 					: ''
 			}${
+				'number' === typeof(line.item.size)
+					? ` size:${line.item.size | 0}%`
+					: ''
+			}${
 				'string' === typeof(line.item.align)
 					? ` align:${line.item.align}`
 					: ''
@@ -615,6 +654,7 @@ function load_editor(
 				form_start.value = setting.start;
 				form_end.value = setting.end;
 				form_position.value = setting.position?.toString(10) || '';
+				form_size.value = setting.size?.toString(10) || '';
 				form_alignment.value = setting.alignment || '';
 			} else {
 				form?.reset();
@@ -643,6 +683,7 @@ function load_editor(
 
 		const speaker = (data.get('speaker') + '').trim();
 		const position = parseInt(data.get('position') + '');
+		const size = parseInt(data.get('size') + '');
 		const alignment = (data.get('alignment') + '').trim();
 
 		if ('' !== speaker) {
@@ -652,6 +693,13 @@ function load_editor(
 				);
 			} else {
 				last_speaker_positions[speaker] = position;
+			}
+			if (Number.isNaN(size)) {
+				form_size.value = (
+					last_speaker_sizes[speaker]?.toString(10) || ''
+				);
+			} else {
+				last_speaker_sizes[speaker] = size;
 			}
 			if ('' === alignment) {
 				form_alignment.value = last_speaker_alignment[speaker] || '';
@@ -681,7 +729,8 @@ function load_editor(
 		}
 
 		const data = new FormData(form);
-		const position = (data.get('position') || null) as string|null;
+		const position = (data.get('position') ?? null) as string|null;
+		const size = (data.get('size') ?? null) as string|null;
 		const align = (
 			data.get('alignment') || null
 		) as 'start'|'center'|'end'|null;
@@ -695,6 +744,7 @@ function load_editor(
 		setting.start = data.get('start') + '';
 		setting.end = data.get('end') + '';
 		setting.position = null !== position ? parseFloat(position) : null;
+		setting.size = null !== size ? parseFloat(size) : null;
 		setting.alignment = align;
 
 		settings.set(maybe, setting);
@@ -788,6 +838,9 @@ function load_editor(
 			(item.item.speaker as string[]).forEach((speaker) => {
 				if (item.item.position) {
 					last_speaker_positions[speaker] = item.item.position;
+				}
+				if (item.item.size) {
+					last_speaker_sizes[speaker] = item.item.size;
 				}
 
 				if (item.item.align) {

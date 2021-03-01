@@ -57,8 +57,7 @@
 								"type": "string"
 							},
 							"position": {
-								"description": "WebVTT-supported position",
-								"maximum": 100,
+								"description": "Position in list",
 								"minimum": 0,
 								"type": "integer"
 							},
@@ -121,6 +120,18 @@
 											"uniqueItems": true,
 											"type": "string"
 										}
+									},
+									"position": {
+										"description": "WebVTT-supported position",
+										"maximum": 100,
+										"minimum": 0,
+										"type": "integer"
+									},
+									"size": {
+										"description": "WebVTT-supported size",
+										"maximum": 100,
+										"minimum": 0,
+										"type": "integer"
 									},
 									"align": {
 										"description": "WebVTT-supported alignment hint",
