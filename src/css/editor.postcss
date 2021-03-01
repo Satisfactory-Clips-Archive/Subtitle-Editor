@@ -34,8 +34,40 @@
 
 	form
 	{
-		display: block ;
+		display: flex ;
+		flex-wrap: wrap ;
 		grid-area: 2 / 2 / 3 / 3 ;
+
+		> fieldset
+		{
+			> ol
+			{
+				list-style: inside none ;
+				display: table ;
+
+				> li
+				{
+					display: table-row ;
+
+					> label,
+					> input
+					{
+						display: talbe-cell ;
+					}
+				}
+			}
+		}
+
+	}
+
+	output[for="editor"]
+	{
+		display: block ;
+
+		&::before
+		{
+			content: 'Current Line: ' ;
+		}
 	}
 
 	textarea

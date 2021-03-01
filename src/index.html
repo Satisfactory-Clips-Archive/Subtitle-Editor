@@ -43,11 +43,11 @@
 <form>
 	<fieldset>
 		<legend>Settings</legend>
-		<button type="submit">Set</button>
 		<ol>
 			<li>
 				<label for="speaker">Speaker</label>
-				<input id="speaker" name="speaker">
+				<input id="speaker" name="speaker" list="speaker-list">
+				<datalist id="speaker-list"></datalist>
 			</li>
 			<li>
 				<label for="start-time">Start Time</label>
@@ -62,6 +62,11 @@
 				<label for="end-time">End Time</label>
 				<input inputmode="decimal" id="end-time" name="end" required>
 			</li>
+		</ol>
+	</fieldset>
+	<fieldset>
+		<legend>WebVTT</legend>
+		<ol>
 			<li>
 				<label for="position">Position</label>
 				<input
@@ -87,6 +92,12 @@
 				</datalist>
 			</li>
 		</ol>
+	</fieldset>
+	<fieldset>
+		<button type="submit">Save To Line</button>
+	</fieldset>
+	<fieldset style="width:100%;">
+		<output for="editor"></output>
 	</fieldset>
 </form>
 <section id="export">

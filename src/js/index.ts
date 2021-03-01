@@ -336,6 +336,10 @@ function load_editor(
 	const form = node.querySelector('form') as HTMLFormElement|null;
 	const settings:WeakMap<Node, CaptionLineSetting> = new WeakMap();
 	let caption_line:Text|HTMLElement|null;
+	let speakers:string[] = [];
+	let previous_speakers:string[] = [];
+	const last_speaker_positions:{[key:string]: number} = {};
+	const last_speaker_alignment:{[key:string]: string} = {};
 
 	if (
 		! editor
@@ -364,6 +368,12 @@ function load_editor(
 	const form_alignment = (
 		form.querySelector('#alignment') as HTMLInputElement|null
 	);
+	const speaker_list = (
+		form.querySelector('#speaker-list') as HTMLDataListElement|null
+	);
+	const line_output = (
+		form.querySelector('output[for="editor"]') as HTMLOutputElement|null
+	);
 
 	if (
 		! form_speaker
@@ -371,6 +381,8 @@ function load_editor(
 		|| ! form_end
 		|| ! form_position
 		|| ! form_alignment
+		|| ! speaker_list
+		|| ! line_output
 	) {
 		throw new Error(
 			'Required components of form not found!'
@@ -483,6 +495,43 @@ function load_editor(
 			script as HTMLTextAreaElement
 		).textContent = JSON.stringify(jsonld, null, "\t");
 
+		speakers = jsonld.about.itemListElement.reduce(
+			(result:string[], item) : string[] => {
+				if (
+					item.item.speaker
+				) {
+					item.item.speaker.forEach((speaker) => {
+						if ( ! result.includes(speaker)) {
+							result.push(speaker);
+						}
+					});
+				}
+
+				return result;
+			},
+			[]
+		).sort();
+
+		if (previous_speakers.join("\n") !== speakers.join("\n")) {
+			(speaker_list as HTMLDataListElement).textContent = '';
+			(speaker_list as HTMLDataListElement).appendChild(
+				speakers.reduce(
+					(
+						result:DocumentFragment,
+						speaker:string
+					) : DocumentFragment => {
+						const option = document.createElement('option');
+						option.value = speaker;
+
+						result.appendChild(option);
+
+						return result;
+					},
+					document.createDocumentFragment()
+				)
+			);
+		}
+
 		return jsonld;
 	}
 
@@ -551,6 +600,8 @@ function load_editor(
 		) {
 			caption_line = maybe;
 
+			line_output.textContent = caption_line.textContent;
+
 			if (settings.has(maybe)) {
 				const setting = settings.get(maybe) as CaptionLineSetting;
 
@@ -561,6 +612,29 @@ function load_editor(
 				form_alignment.value = setting.alignment || '';
 			} else {
 				form.reset();
+			}
+		}
+	});
+
+	form.addEventListener('input', (e) => {
+		const data = new FormData(form);
+
+		const speaker = (data.get('speaker') + '').trim();
+		const position = parseInt(data.get('position') + '');
+		const alignment = (data.get('alignment') + '').trim();
+
+		if ('' !== speaker) {
+			if (Number.isNaN(position)) {
+				form_position.value = (
+					last_speaker_positions[speaker]?.toString(10) || ''
+				);
+			} else {
+				last_speaker_positions[speaker] = position;
+			}
+			if ('' === alignment) {
+				form_alignment.value = last_speaker_alignment[speaker] || '';
+			} else {
+				last_speaker_alignment[speaker] = alignment;
 			}
 		}
 	});
@@ -623,7 +697,23 @@ function load_editor(
 		editor.appendChild(document.createTextNode("\n"));
 	});
 
-	update_webvtt(update_jsonld());
+	const json = update_jsonld();
+
+	json.about.itemListElement.forEach((item) => {
+		if (item.item.speaker) {
+			(item.item.speaker as string[]).forEach((speaker) => {
+				if (item.item.position) {
+					last_speaker_positions[speaker] = item.item.position;
+				}
+
+				if (item.item.align) {
+					last_speaker_alignment[speaker] = item.item.align;
+				}
+			});
+		}
+	});
+
+	update_webvtt(json);
 
 	main.textContent = '';
 	main.appendChild(node);
