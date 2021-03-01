@@ -374,6 +374,12 @@ function load_editor(
 	const line_output = (
 		form.querySelector('output[for="editor"]') as HTMLOutputElement|null
 	);
+	const previous = (
+		form.querySelector('button#previous-line') as HTMLButtonElement|null
+	);
+	const next = (
+		form.querySelector('button#next-line') as HTMLButtonElement|null
+	);
 
 	if (
 		! form_speaker
@@ -417,12 +423,19 @@ function load_editor(
 
 	embed.appendChild(iframe);
 
-	function update_jsonld() : JsonLdType
+	function editor_iterator() : NodeIterator
 	{
 		const iterator = document.createNodeIterator(
 			editor as HTMLElement,
 			NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
 		);
+
+		return iterator;
+	}
+
+	function update_jsonld() : JsonLdType
+	{
+		const iterator = editor_iterator();
 
 		const jsonld:JsonLdType = {
 			"@context": "https://schema.org",
@@ -588,6 +601,27 @@ function load_editor(
 		}).join("\n")}`;
 	}
 
+	const update_settings_from_caption_line = () : void =>
+	{
+		const maybe = caption_line;
+
+		if (maybe) {
+			line_output.textContent = caption_line?.textContent + '';
+
+			if (settings.has(maybe)) {
+				const setting = settings.get(maybe) as CaptionLineSetting;
+
+				form_speaker.value = setting.speaker;
+				form_start.value = setting.start;
+				form_end.value = setting.end;
+				form_position.value = setting.position?.toString(10) || '';
+				form_alignment.value = setting.alignment || '';
+			} else {
+				form?.reset();
+			}
+		}
+	}
+
 	document.addEventListener('selectionchange', (e) => {
 		const maybe = getSelection()?.anchorNode as Text|null;
 
@@ -600,19 +634,7 @@ function load_editor(
 		) {
 			caption_line = maybe;
 
-			line_output.textContent = caption_line.textContent;
-
-			if (settings.has(maybe)) {
-				const setting = settings.get(maybe) as CaptionLineSetting;
-
-				form_speaker.value = setting.speaker;
-				form_start.value = setting.start;
-				form_end.value = setting.end;
-				form_position.value = setting.position?.toString(10) || '';
-				form_alignment.value = setting.alignment || '';
-			} else {
-				form.reset();
-			}
+			update_settings_from_caption_line();
 		}
 	});
 
@@ -682,6 +704,68 @@ function load_editor(
 
 	editor.addEventListener('input', () => {
 		update_webvtt(update_jsonld());
+	});
+
+	(previous as HTMLButtonElement).addEventListener('click', () => {
+		const iterator = editor_iterator();
+
+		let currentNode:Text|HTMLElement|null;
+		let nodes:(Text|HTMLElement)[] = [];
+
+		while (currentNode = (iterator.nextNode() as Text|HTMLElement|null)) {
+			if (
+				currentNode === editor
+				|| '' === currentNode.textContent?.trim()
+			) {
+				continue;
+			}
+
+			nodes.push(currentNode);
+		}
+
+		if (caption_line && nodes.includes(caption_line)) {
+			caption_line = nodes[
+				(nodes.indexOf(caption_line) || nodes.length) - 1
+			];
+		} else {
+			caption_line = nodes[nodes.length - 1];
+		}
+
+		update_settings_from_caption_line();
+	});
+
+	(next as HTMLButtonElement).addEventListener('click', () => {
+		const iterator = editor_iterator();
+
+		let currentNode:Text|HTMLElement|null;
+		let use_next_node = false;
+		let use_node:Text|HTMLElement|null = null;
+
+		while (currentNode = (iterator.nextNode() as Text|HTMLElement|null)) {
+			if (
+				currentNode === editor
+				|| '' === currentNode.textContent?.trim()
+			) {
+				continue;
+			}
+
+			if (use_next_node) {
+				use_node = currentNode;
+				break;
+			}
+
+			if ( ! use_node) {
+				use_node = currentNode;
+			}
+
+			if (currentNode === caption_line) {
+				use_next_node = true;
+			}
+		}
+
+		caption_line = use_node;
+
+		update_settings_from_caption_line();
 	});
 
 	captions.forEach((e) => {
