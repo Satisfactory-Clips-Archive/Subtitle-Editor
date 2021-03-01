@@ -420,11 +420,11 @@ function load_editor(
 			about: {
 			"@type": "ItemList",
 			itemListElement: [
-			] as {
-				'@type': 'ListItem',
-				position: number,
-				item: CaptionItem,
-			}[]
+				] as {
+					'@type': 'ListItem',
+					position: number,
+					item: CaptionItem,
+				}[]
 			}
 		};
 
