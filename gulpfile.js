@@ -34,7 +34,6 @@ gulp.task('typescript', async () => {
 				outDir: './src/js',
 			}),
 			terser({
-				ecma: '2015',
 			}),
 		],
 	});
