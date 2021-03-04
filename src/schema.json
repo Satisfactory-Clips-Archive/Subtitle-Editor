@@ -20,97 +20,97 @@
 			"type": "string"
 		},
 		"text": {
-					"type": "array",
-					"additionalItems": true,
-					"items": {
-						"required": [
+			"type": "array",
+			"additionalItems": true,
+			"items": {
+				"required": [
 					"text"
 				],
-								"type": "object",
-								"properties": {
-									"text": {
-										"description": "The text uttered by the speaker, or otherwise a textual representation of the usable audio occurring at the specified moment in the video.",
-										"type": "string"
-									},
-				"startTime": {
-												"description": "The ISO 8601 duration of the start of the utterance.",
-												"examples": [
-													"PT0.08S"
-												],
-												"pattern": "^PT\\d+(?:\\.\\d+)?S$",
-												"type": "string"
-											},
-				"endTime": {
-												"description": "The ISO 8601 duration for the end of the utterance.",
-												"examples": [
-													"PT2.56S"
-												],
-												"pattern": "^PT\\d+(?:\\.\\d+)?S$",
-												"type": "string"
-										},
-									"speaker": {
-										"description": "The name of the person speaking",
-										"examples": [
-											[
-												"Jace"
-											],
-											[
-												"Snutt"
-											],
-											[
-												"Jace",
-												"Snutt"
-											]
-										],
-										"type": "array",
-										"additionalItems": true,
-										"items": {
-											"minLength": 1,
-											"uniqueItems": true,
-											"type": "string"
-										}
-									},
-									"followsOnFromPrevious": {
-										"description": "Whether the current line follows on direction from the previous line (i.e. part of the same sentence).",
-										"type":"boolean",
-										"default": false
-									},
-				"webvtt": {
-					"type": "object",
-					"properties": {
-									"position": {
-										"description": "WebVTT-supported position",
-										"maximum": 100,
-										"minimum": 0,
-										"type": "integer"
-									},
-									"size": {
-										"description": "WebVTT-supported size",
-										"maximum": 100,
-										"minimum": 0,
-										"type": "integer"
-									},
-									"line": {
-										"description": "WebVTT-supported line",
-										"maximum": 100,
-										"minimum": -100,
-										"type": "integer"
-									},
-									"align": {
-										"description": "WebVTT-supported alignment hint",
-										"enum": [
-											"start",
-											"middle",
-											"end"
-										],
-										"type": "string"
-									}
-								},
-								"additionalProperties": false
+				"type": "object",
+				"properties": {
+					"text": {
+						"description": "The text uttered by the speaker, or otherwise a textual representation of the usable audio occurring at the specified moment in the video.",
+						"type": "string"
+					},
+					"startTime": {
+						"description": "The ISO 8601 duration of the start of the utterance.",
+						"examples": [
+							"PT0.08S"
+						],
+						"pattern": "^PT\\d+(?:\\.\\d+)?S$",
+						"type": "string"
+					},
+					"endTime": {
+						"description": "The ISO 8601 duration for the end of the utterance.",
+						"examples": [
+							"PT2.56S"
+						],
+						"pattern": "^PT\\d+(?:\\.\\d+)?S$",
+						"type": "string"
+					},
+					"speaker": {
+						"description": "The name of the person speaking",
+						"examples": [
+							[
+								"Jace"
+							],
+							[
+								"Snutt"
+							],
+							[
+								"Jace",
+								"Snutt"
+							]
+						],
+						"type": "array",
+						"additionalItems": true,
+						"items": {
+							"minLength": 1,
+							"uniqueItems": true,
+							"type": "string"
+						}
+					},
+					"followsOnFromPrevious": {
+						"description": "Whether the current line follows on direction from the previous line (i.e. part of the same sentence).",
+						"type":"boolean",
+						"default": false
+					},
+					"webvtt": {
+						"type": "object",
+						"properties": {
+							"position": {
+								"description": "WebVTT-supported position",
+								"maximum": 100,
+								"minimum": 0,
+								"type": "integer"
+							},
+							"size": {
+								"description": "WebVTT-supported size",
+								"maximum": 100,
+								"minimum": 0,
+								"type": "integer"
+							},
+							"line": {
+								"description": "WebVTT-supported line",
+								"maximum": 100,
+								"minimum": -100,
+								"type": "integer"
+							},
+							"align": {
+								"description": "WebVTT-supported alignment hint",
+								"enum": [
+									"start",
+									"middle",
+									"end"
+								],
+								"type": "string"
 							}
 						},
 						"additionalProperties": false
 					}
+				},
+				"additionalProperties": false
+			}
 		}
 	},
 	"additionalProperties": false
