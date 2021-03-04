@@ -63,12 +63,12 @@
 							},
 							"item": {
 								"required": [
-									"line",
+									"text",
 									"time"
 								],
 								"type": "object",
 								"properties": {
-									"line": {
+									"text": {
 										"description": "The text uttered by the speaker, or otherwise a textual representation of the usable audio occurring at the specified moment in the video.",
 										"type": "string"
 									},
@@ -131,6 +131,12 @@
 										"description": "WebVTT-supported size",
 										"maximum": 100,
 										"minimum": 0,
+										"type": "integer"
+									},
+									"line": {
+										"description": "WebVTT-supported line",
+										"maximum": 100,
+										"minimum": -100,
 										"type": "integer"
 									},
 									"align": {

@@ -7,10 +7,11 @@ declare type CaptionTime = {
 };
 
 declare type CaptionItem = {
-	line: string,
+	text: string,
 	time?: CaptionTime,
 	speaker?: string[],
 	position?:number,
+	line?:number,
 	size?:number,
 	align?:'start'|'center'|'end',
 };
@@ -76,6 +77,8 @@ class CaptionLineSetting
 	private _end:string = '';
 
 	private _position:number|null = null;
+
+	private _line:number|null = null;
 
 	private _size:number|null = null;
 
@@ -143,6 +146,22 @@ class CaptionLineSetting
 		}
 	}
 
+	get line() : number|null
+	{
+		return this._line;
+	}
+
+	set line(value:number|null)
+	{
+		if (null === value) {
+			this._line = null;
+		} else if ('number' === typeof(value)) {
+			this._line = Math.max(0, value) | 0;
+		} else {
+			this._line = Math.max(0, parseFloat(value)) | 0;
+		}
+	}
+
 	get size() : number|null
 	{
 		return this._size;
@@ -164,6 +183,7 @@ class CaptionLineSetting
 		start:string,
 		end:string,
 		position:number|string|null = null,
+		line:number|string|null = null,
 		size:number|string|null = null,
 		alignment:'start'|'center'|'end'|null = null
 	) {
@@ -174,6 +194,11 @@ class CaptionLineSetting
 			'string' === typeof(position)
 				? parseFloat(position)
 				: position
+		);
+		this.line = (
+			'string' === typeof(line)
+				? parseFloat(line)
+				: line
 		);
 		this.size = (
 			'string' === typeof(size)
@@ -270,11 +295,12 @@ function load_await_url() : void
 					const start = (line_data.item.time as CaptionTime).start;
 					const end = (line_data.item.time as CaptionTime).end;
 
-					return [line_data.item.line, new CaptionLineSetting(
+					return [line_data.item.text, new CaptionLineSetting(
 						(line_data.item.speaker || []).join(', '),
 						start.replace(/^PT(.+)S$/, '$1'),
 						end.replace(/^PT(.+)S$/, '$1'),
 						line_data.item.position ?? null,
+						line_data.item.line ?? null,
 						line_data.item.size ?? null,
 						line_data.item.align || null
 					)];
@@ -365,6 +391,7 @@ function load_editor(
 	let speakers:string[] = [];
 	let previous_speakers:string[] = [];
 	const last_speaker_positions:{[key:string]: number} = {};
+	const last_speaker_lines:{[key:string]: number} = {};
 	const last_speaker_sizes:{[key:string]: number} = {};
 	const last_speaker_alignment:{[key:string]: string} = {};
 
@@ -392,6 +419,9 @@ function load_editor(
 	const form_position = (
 		form.querySelector('#position') as HTMLInputElement|null
 	);
+	const form_line = (
+		form.querySelector('#line') as HTMLInputElement|null
+	);
 	const form_size = (
 		form.querySelector('#size') as HTMLInputElement|null
 	);
@@ -416,6 +446,7 @@ function load_editor(
 		|| ! form_start
 		|| ! form_end
 		|| ! form_position
+		|| ! form_line
 		|| ! form_size
 		|| ! form_alignment
 		|| ! speaker_list
@@ -495,7 +526,7 @@ function load_editor(
 				continue;
 			} else if (currentNode instanceof Text) {
 				let item:CaptionItem = {
-					line: currentNode.textContent + '',
+					text: currentNode.textContent + '',
 				};
 
 				if (settings.has(currentNode)) {
@@ -518,6 +549,10 @@ function load_editor(
 
 					if (null !== setting.position) {
 						item.position = setting.position;
+					}
+
+					if (null !== setting.line) {
+						item.line = setting.line;
 					}
 
 					if (null !== setting.size) {
@@ -623,7 +658,11 @@ function load_editor(
 					? ` position:${line.item.position | 0}%`
 					: ''
 			}${
-				'number' === typeof(line.item.size)
+				'number' === typeof(line.item.line)
+					? ` line:${line.item.line | 0}%`
+					: ''
+			}${
+				('number' === typeof(line.item.size) && line.item.size > 0)
 					? ` size:${line.item.size | 0}%`
 					: ''
 			}${
@@ -633,7 +672,7 @@ function load_editor(
 			}${
 				"\n"
 			}${
-				line.item.line
+				line.item.text
 			}${
 				"\n"
 			}`
@@ -654,6 +693,7 @@ function load_editor(
 				form_start.value = setting.start;
 				form_end.value = setting.end;
 				form_position.value = setting.position?.toString(10) || '';
+				form_line.value = setting.line?.toString(10) || '';
 				form_size.value = setting.size?.toString(10) || '';
 				form_alignment.value = setting.alignment || '';
 			} else {
@@ -683,6 +723,7 @@ function load_editor(
 
 		const speaker = (data.get('speaker') + '').trim();
 		const position = parseInt(data.get('position') + '');
+		const line = parseInt(data.get('line') + '');
 		const size = parseInt(data.get('size') + '');
 		const alignment = (data.get('alignment') + '').trim();
 
@@ -693,6 +734,13 @@ function load_editor(
 				);
 			} else {
 				last_speaker_positions[speaker] = position;
+			}
+			if (Number.isNaN(line)) {
+				form_line.value = (
+					last_speaker_lines[speaker]?.toString(10) || ''
+				);
+			} else {
+				last_speaker_lines[speaker] = line;
 			}
 			if (Number.isNaN(size)) {
 				form_size.value = (
@@ -730,6 +778,7 @@ function load_editor(
 
 		const data = new FormData(form);
 		const position = (data.get('position') ?? null) as string|null;
+		const line = (data.get('line') ?? null) as string|null;
 		const size = (data.get('size') ?? null) as string|null;
 		const align = (
 			data.get('alignment') || null
@@ -744,6 +793,7 @@ function load_editor(
 		setting.start = data.get('start') + '';
 		setting.end = data.get('end') + '';
 		setting.position = null !== position ? parseFloat(position) : null;
+		setting.line = null !== line ? parseFloat(line) : null;
 		setting.size = null !== size ? parseFloat(size) : null;
 		setting.alignment = align;
 
@@ -838,6 +888,9 @@ function load_editor(
 			(item.item.speaker as string[]).forEach((speaker) => {
 				if (item.item.position) {
 					last_speaker_positions[speaker] = item.item.position;
+				}
+				if (item.item.line) {
+					last_speaker_lines[speaker] = item.item.line;
 				}
 				if (item.item.size) {
 					last_speaker_sizes[speaker] = item.item.size;
