@@ -495,14 +495,23 @@ function load_editor(
 
 	embed.appendChild(iframe);
 
-	function editor_iterator() : NodeIterator
+	function editor_iterator() : (Text|HTMLElement)[]
 	{
-		const iterator = document.createNodeIterator(
-			editor as HTMLElement,
-			NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
-		);
+		return [...(editor as HTMLElement).childNodes].filter(
+			(maybe) : boolean => {
+				if (
+					"\n" !== maybe.textContent
+					&& '' === maybe.textContent?.trim()
+				) {
+					return false;
+				}
 
-		return iterator;
+				return (
+					(maybe instanceof Text)
+					|| (maybe instanceof HTMLDivElement)
+				);
+			}
+		) as (Text|HTMLDivElement)[];
 	}
 
 	function update_jsonld() : JsonLdType
@@ -525,10 +534,9 @@ function load_editor(
 			}
 		};
 
-		let currentNode;
 		let index = 0;
 
-		while (currentNode = iterator.nextNode()) {
+		for (let currentNode of iterator) {
 			if (
 				currentNode === editor
 				|| '' === (currentNode.textContent?.trim() + '')
@@ -830,21 +838,7 @@ function load_editor(
 	});
 
 	(previous as HTMLButtonElement).addEventListener('click', () => {
-		const iterator = editor_iterator();
-
-		let currentNode:Text|HTMLElement|null;
-		let nodes:(Text|HTMLElement)[] = [];
-
-		while (currentNode = (iterator.nextNode() as Text|HTMLElement|null)) {
-			if (
-				currentNode === editor
-				|| '' === currentNode.textContent?.trim()
-			) {
-				continue;
-			}
-
-			nodes.push(currentNode);
-		}
+		let nodes:(Text|HTMLElement)[] = editor_iterator();
 
 		if (caption_line && nodes.includes(caption_line)) {
 			caption_line = nodes[
@@ -860,18 +854,10 @@ function load_editor(
 	(next as HTMLButtonElement).addEventListener('click', () => {
 		const iterator = editor_iterator();
 
-		let currentNode:Text|HTMLElement|null;
 		let use_next_node = false;
 		let use_node:Text|HTMLElement|null = null;
 
-		while (currentNode = (iterator.nextNode() as Text|HTMLElement|null)) {
-			if (
-				currentNode === editor
-				|| '' === currentNode.textContent?.trim()
-			) {
-				continue;
-			}
-
+		for (let currentNode of iterator) {
 			if (use_next_node) {
 				use_node = currentNode;
 				break;
