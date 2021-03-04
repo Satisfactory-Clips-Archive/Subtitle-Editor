@@ -13,7 +13,7 @@ declare type CaptionItem = {
 	position?:number,
 	line?:number,
 	size?:number,
-	align?:'start'|'center'|'end',
+	align?:'start'|'middle'|'end',
 };
 
 declare type JsonLdTypeCaptions = {
@@ -82,7 +82,7 @@ class CaptionLineSetting
 
 	private _size:number|null = null;
 
-	alignment:'start'|'center'|'end'|null = null;
+	alignment:'start'|'middle'|'end'|null = null;
 
 	get speaker() : string
 	{
@@ -185,7 +185,7 @@ class CaptionLineSetting
 		position:number|string|null = null,
 		line:number|string|null = null,
 		size:number|string|null = null,
-		alignment:'start'|'center'|'end'|null = null
+		alignment:'start'|'middle'|'end'|null = null
 	) {
 		this.start = start;
 		this.end = end;
@@ -782,7 +782,7 @@ function load_editor(
 		const size = (data.get('size') ?? null) as string|null;
 		const align = (
 			data.get('alignment') || null
-		) as 'start'|'center'|'end'|null;
+		) as 'start'|'middle'|'end'|null;
 		const setting = settings.get(maybe) || new CaptionLineSetting(
 			'',
 			'0',
