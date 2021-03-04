@@ -121,6 +121,11 @@
 											"type": "string"
 										}
 									},
+									"followsOnFromPrevious": {
+										"description": "Whether the current line follows on direction from the previous line (i.e. part of the same sentence).",
+										"type":"boolean",
+										"default": false
+									},
 									"position": {
 										"description": "WebVTT-supported position",
 										"maximum": 100,

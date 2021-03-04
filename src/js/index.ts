@@ -10,6 +10,7 @@ declare type CaptionItem = {
 	text: string,
 	time?: CaptionTime,
 	speaker?: string[],
+	followsOnFromPrevious?:boolean,
 	position?:number,
 	line?:number,
 	size?:number,
@@ -84,6 +85,8 @@ class CaptionLineSetting
 
 	alignment:'start'|'middle'|'end'|null = null;
 
+	followsOnFromPrevious = false;
+
 	get speaker() : string
 	{
 		return this._speaker;
@@ -137,7 +140,7 @@ class CaptionLineSetting
 
 	set position(value:number|null)
 	{
-		if (null === value) {
+		if (null === value || isNaN(value)) {
 			this._position = null;
 		} else if ('number' === typeof(value)) {
 			this._position = Math.max(0, value) | 0;
@@ -153,7 +156,7 @@ class CaptionLineSetting
 
 	set line(value:number|null)
 	{
-		if (null === value) {
+		if (null === value || isNaN(value)) {
 			this._line = null;
 		} else if ('number' === typeof(value)) {
 			this._line = Math.max(0, value) | 0;
@@ -169,7 +172,7 @@ class CaptionLineSetting
 
 	set size(value:number|null)
 	{
-		if (null === value) {
+		if (null === value || isNaN(value)) {
 			this._size = null;
 		} else if ('number' === typeof(value)) {
 			this._size = Math.max(0, value) | 0;
@@ -185,11 +188,13 @@ class CaptionLineSetting
 		position:number|string|null = null,
 		line:number|string|null = null,
 		size:number|string|null = null,
-		alignment:'start'|'middle'|'end'|null = null
+		alignment:'start'|'middle'|'end'|null = null,
+		followsOnFromPrevious = false
 	) {
 		this.start = start;
 		this.end = end;
 		this.speaker = speaker;
+		this.followsOnFromPrevious = followsOnFromPrevious;
 		this.position = (
 			'string' === typeof(position)
 				? parseFloat(position)
@@ -302,7 +307,8 @@ function load_await_url() : void
 						line_data.item.position ?? null,
 						line_data.item.line ?? null,
 						line_data.item.size ?? null,
-						line_data.item.align || null
+						line_data.item.align || null,
+						line_data.item.followsOnFromPrevious || false
 					)];
 				});
 			} catch (error) {
@@ -410,6 +416,9 @@ function load_editor(
 	const form_speaker = (
 		form.querySelector('#speaker') as HTMLInputElement|null
 	);
+	const form_followsOnFromPrevious = (
+		form.querySelector('#follows-on-from-previous') as HTMLInputElement|null
+	);
 	const form_start = (
 		form.querySelector('#start-time') as HTMLInputElement|null
 	);
@@ -443,6 +452,7 @@ function load_editor(
 
 	if (
 		! form_speaker
+		|| ! form_followsOnFromPrevious
 		|| ! form_start
 		|| ! form_end
 		|| ! form_position
@@ -545,6 +555,14 @@ function load_editor(
 								return e.trim();
 							}
 						);
+					}
+
+					item.followsOnFromPrevious = (
+						form_followsOnFromPrevious as HTMLInputElement
+					).checked;
+
+					if ( ! item.followsOnFromPrevious) {
+						delete item.followsOnFromPrevious;
 					}
 
 					if (null !== setting.position) {
@@ -690,6 +708,7 @@ function load_editor(
 				const setting = settings.get(maybe) as CaptionLineSetting;
 
 				form_speaker.value = setting.speaker;
+				form_followsOnFromPrevious.checked = setting.followsOnFromPrevious;
 				form_start.value = setting.start;
 				form_end.value = setting.end;
 				form_position.value = setting.position?.toString(10) || '';
@@ -790,6 +809,12 @@ function load_editor(
 		);
 
 		setting.speaker = data.get('speaker') + '';
+		console.log(data.get(
+			'follows-on-from-previous'
+		));
+		setting.followsOnFromPrevious = '1' === data.get(
+			'follows-on-from-previous'
+		);
 		setting.start = data.get('start') + '';
 		setting.end = data.get('end') + '';
 		setting.position = null !== position ? parseFloat(position) : null;
