@@ -1,44 +1,48 @@
 import {default as schema} from '../schema.json';
 import Ajv from 'ajv';
 
-declare type CaptionTime = {
-	start: string,
-	end: string,
+declare type TimelessText = {
+	text:string,
+	language?:string,
+	about?: string,
+}
+
+declare type CaptionItem = TimelessText&{
+	text:string|[(string|TimelessText), ...(string|TimelessText)[]],
+	speaker?: string[],
+	startTime?: string,
+	endTime?:string,
+	followsOnFromPrevious?:boolean,
+	webvtt?: CaptionItemWebVTT,
 };
 
-declare type CaptionItem = {
-	text: string,
-	time?: CaptionTime,
-	speaker?: string[],
-	followsOnFromPrevious?:boolean,
+declare type CaptionItemHasWebVTT = CaptionItem & {
+	webvtt: CaptionItemWebVTT,
+};
+
+declare type CaptionItemHasBothTimes = CaptionItem & {
+	startTime: string,
+	endTime:string,
+};
+
+declare type CaptionItemWebVTT = {
 	position?:number,
 	line?:number,
 	size?:number,
 	align?:'start'|'middle'|'end',
-};
-
-declare type JsonLdTypeCaptions = {
-	"@type": "ItemList",
-	itemListElement: {
-		'@type': 'ListItem',
-		position: number,
-		item: CaptionItem,
-	}[],
-};
+}
 
 declare type JsonLdTypeTranslation<T> = {
-	"@type": "CreativeWork",
-	about: JsonLdTypeCaptions,
-	inLanguage: T&string,
+	language: T&string,
+	text: [CaptionItem, ...CaptionItem[]],
 };
 
 declare type JsonLdType = JsonLdTypeTranslation<'en'|'en-GB'|'en-US'>&{
-	"@context": "https://schema.org",
-	"@type": "CreativeWork",
-	about: JsonLdTypeCaptions,
-	url: string,
-	inLanguage:'en'|'en-GB'|'en-US',
-	translationOfWork?:JsonLdTypeTranslation<string>[]
+	about: string, // video url
+	translation?: [
+		JsonLdTypeTranslation<string>,
+		...JsonLdTypeTranslation<string>[],
+	],
 };
 
 const templates:{[key:string]:HTMLTemplateElement} = {};
@@ -294,21 +298,39 @@ function load_await_url() : void
 
 				await validator(json_data);
 
-				args[1] = json_data.about.itemListElement.sort((a, b) => {
-					return a.position - b.position;
-				}).map((line_data) => {
-					const start = (line_data.item.time as CaptionTime).start;
-					const end = (line_data.item.time as CaptionTime).end;
+				args[1] = json_data.text.sort((a, b) => {
+					const a_start = parseFloat(
+						(a.startTime ?? 'PT0S').replace(/^PT(.+)S$/, '$1')
+					);
+					const b_start = parseFloat(
+						(b.startTime ?? 'PT0S').replace(/^PT(.+)S$/, '$1')
+					);
 
-					return [line_data.item.text, new CaptionLineSetting(
-						(line_data.item.speaker || []).join(', '),
-						start.replace(/^PT(.+)S$/, '$1'),
-						end.replace(/^PT(.+)S$/, '$1'),
-						line_data.item.position ?? null,
-						line_data.item.line ?? null,
-						line_data.item.size ?? null,
-						line_data.item.align || null,
-						line_data.item.followsOnFromPrevious || false
+					return a_start - b_start;
+				}).map((line_data) => {
+					const start = (
+						(line_data.startTime ?? 'PT0S').replace(
+							/^PT(.+)S$/,
+							'$1'
+						)
+					);
+					const end = (
+						(line_data.endTime ?? 'PT0S').replace(
+							/^PT(.+)S$/,
+							'$1'
+						)
+					);
+					const webvtt = line_data.webvtt ?? {};
+
+					return [line_data.text, new CaptionLineSetting(
+						(line_data.speaker ?? []).join(', '),
+						start,
+						end,
+						webvtt.position ?? null,
+						webvtt.line ?? null,
+						webvtt.size ?? null,
+						webvtt.align ?? null,
+						line_data.followsOnFromPrevious ?? false
 					)];
 				});
 			} catch (error) {
@@ -519,22 +541,16 @@ function load_editor(
 		const iterator = editor_iterator();
 
 		const jsonld:JsonLdType = {
-			"@context": "https://schema.org",
-			'@type': 'CreativeWork',
-			inLanguage: 'en',
-			url: id + '',
-			about: {
-			"@type": "ItemList",
-			itemListElement: [
-				] as {
-					'@type': 'ListItem',
-					position: number,
-					item: CaptionItem,
-				}[]
-			}
+			about: id + '',
+			language: 'en',
+			text: [
+				{
+					text: '',
+				}
+			],
 		};
 
-		let index = 0;
+		const items:CaptionItem[] = [];
 
 		for (let currentNode of iterator) {
 			if (
@@ -543,8 +559,9 @@ function load_editor(
 			) {
 				continue;
 			} else if (currentNode instanceof Text) {
-				let item:CaptionItem = {
+				let item:CaptionItemHasWebVTT = {
 					text: currentNode.textContent + '',
+					webvtt: {},
 				};
 
 				if (settings.has(currentNode)) {
@@ -552,10 +569,8 @@ function load_editor(
 						currentNode
 					) as CaptionLineSetting;
 
-					item.time = {
-						start: `PT${setting.start}S`,
-						end: `PT${setting.end}S`,
-					};
+					item.startTime = `PT${setting.start}S`;
+					item.endTime =`PT${setting.end}S`;
 
 					if ('' !== setting.speaker) {
 						item.speaker = setting.speaker.split(',').map(
@@ -567,47 +582,56 @@ function load_editor(
 
 					item.followsOnFromPrevious = setting.followsOnFromPrevious;
 
-					if ( ! item.followsOnFromPrevious) {
-						delete item.followsOnFromPrevious;
-					}
-
 					if (null !== setting.position) {
-						item.position = setting.position;
+						item.webvtt.position = setting.position;
 					}
 
 					if (null !== setting.line) {
-						item.line = setting.line;
+						item.webvtt.line = setting.line;
 					}
 
 					if (null !== setting.size) {
-						item.size = setting.size;
+						item.webvtt.size = setting.size;
 					}
 
 					if (null !== setting.alignment) {
-						item.align = setting.alignment;
+						item.webvtt.align = setting.alignment;
 					}
 				}
 
-				jsonld.about.itemListElement.push({
-					'@type': 'ListItem',
-					position: index,
-					item,
-				});
+				const filtered_item:CaptionItem = item;
 
-				++index;
+				if ( ! filtered_item.followsOnFromPrevious) {
+					delete filtered_item.followsOnFromPrevious;
+				}
+
+				if (
+					'webvtt' in filtered_item
+					&& 0 === Object.keys(
+						filtered_item.webvtt as CaptionItemWebVTT
+					).length
+				) {
+					delete filtered_item.webvtt;
+				}
+
+				items.push(item);
 			}
+		}
+
+		if (items.length > 0) {
+			jsonld.text = (items as [CaptionItem, ...CaptionItem[]]);
 		}
 
 		(
 			script as HTMLTextAreaElement
 		).textContent = JSON.stringify(jsonld, null, "\t");
 
-		speakers = jsonld.about.itemListElement.reduce(
+		speakers = jsonld.text.reduce(
 			(result:string[], item) : string[] => {
 				if (
-					item.item.speaker
+					item.speaker
 				) {
-					item.item.speaker.forEach((speaker) => {
+					item.speaker.forEach((speaker) => {
 						if ( ! result.includes(speaker)) {
 							result.push(speaker);
 						}
@@ -659,15 +683,17 @@ function load_editor(
 	{
 		(webvtt as HTMLTextAreaElement).textContent = `WEBVTT${
 			"\n\n"
-		}${jsonld.about.itemListElement.filter((line) => {
-			return 'time' in line.item;
+		}${jsonld.text.filter((line) => {
+			return 'startTime' in line && 'endTime' in line;
 		}).map((line, index) => {
 			const start = parseFloat(
-				(line.item.time as CaptionTime).start.split('T')[1]
+				(line as CaptionItemHasBothTimes).startTime.split('T')[1]
 			);
 			const end = parseFloat(
-				(line.item.time as CaptionTime).end.split('T')[1]
+				(line as CaptionItemHasBothTimes).endTime.split('T')[1]
 			);
+
+			const webvtt:CaptionItemWebVTT = line.webvtt || {};
 
 			return `${
 				index
@@ -678,25 +704,25 @@ function load_editor(
 			} --> ${
 				webvtt_time(end)
 			}${
-				'number' === typeof(line.item.position)
-					? ` position:${line.item.position | 0}%`
+				'number' === typeof(webvtt.position)
+					? ` position:${webvtt.position | 0}%`
 					: ''
 			}${
-				'number' === typeof(line.item.line)
-					? ` line:${line.item.line | 0}%`
+				'number' === typeof(webvtt.line)
+					? ` line:${webvtt.line | 0}%`
 					: ''
 			}${
-				('number' === typeof(line.item.size) && line.item.size > 0)
-					? ` size:${line.item.size | 0}%`
+				('number' === typeof(webvtt.size) && webvtt.size > 0)
+					? ` size:${webvtt.size | 0}%`
 					: ''
 			}${
-				'string' === typeof(line.item.align)
-					? ` align:${line.item.align}`
+				'string' === typeof(webvtt.align)
+					? ` align:${webvtt.align}`
 					: ''
 			}${
 				"\n"
 			}${
-				line.item.text
+				line.text
 			}${
 				"\n"
 			}`
@@ -892,21 +918,23 @@ function load_editor(
 
 	const json = update_jsonld();
 
-	json.about.itemListElement.forEach((item) => {
-		if (item.item.speaker) {
-			(item.item.speaker as string[]).forEach((speaker) => {
-				if (item.item.position) {
-					last_speaker_positions[speaker] = item.item.position;
+	json.text.forEach((item) => {
+		if (item.speaker && item.webvtt) {
+			const webvtt = item.webvtt as CaptionItemWebVTT;
+
+			(item.speaker as string[]).forEach((speaker) => {
+				if (webvtt.position) {
+					last_speaker_positions[speaker] = webvtt.position;
 				}
-				if (item.item.line) {
-					last_speaker_lines[speaker] = item.item.line;
+				if (webvtt.line) {
+					last_speaker_lines[speaker] = webvtt.line;
 				}
-				if (item.item.size) {
-					last_speaker_sizes[speaker] = item.item.size;
+				if (webvtt.size) {
+					last_speaker_sizes[speaker] = webvtt.size;
 				}
 
-				if (item.item.align) {
-					last_speaker_alignment[speaker] = item.item.align;
+				if (webvtt.align) {
+					last_speaker_alignment[speaker] = webvtt.align;
 				}
 			});
 		}
