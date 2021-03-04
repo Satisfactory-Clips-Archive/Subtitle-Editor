@@ -557,9 +557,7 @@ function load_editor(
 						);
 					}
 
-					item.followsOnFromPrevious = (
-						form_followsOnFromPrevious as HTMLInputElement
-					).checked;
+					item.followsOnFromPrevious = setting.followsOnFromPrevious;
 
 					if ( ! item.followsOnFromPrevious) {
 						delete item.followsOnFromPrevious;
