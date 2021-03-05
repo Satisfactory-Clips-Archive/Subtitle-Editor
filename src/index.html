@@ -132,6 +132,23 @@
 		<button type="button" id="previous-line">⏮</button>
 		<button type="button" id="next-line">⏭</button>
 	</fieldset>
+	<fieldset>
+		<legend>Segment</legend>
+		<ul>
+			<li>
+				<label for="about">About</label>
+				<input
+					id="about"
+					name="about"
+					pattern="^\/(?:topics|transcript)\/"
+				>
+				<button
+					type="button"
+					id="set-about"
+				>Apply</button>
+			</li>
+		</ul>
+	</fieldset>
 	<fieldset style="width:100%;">
 		<output for="editor"></output>
 	</fieldset>

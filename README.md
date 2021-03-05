@@ -4,6 +4,9 @@ Subtitle editor for [archive.satisfactory.video](https://archive.satisfactory.vi
 
 # Changelog
 
+## 2020-03-05
+* implemented topic support
+
 ## 2020-03-04
 * implemented webvtt line support
 * implemented sentence continuation

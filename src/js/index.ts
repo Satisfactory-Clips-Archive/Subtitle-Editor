@@ -1,14 +1,22 @@
 import {default as schema} from '../schema.json';
 import Ajv from 'ajv';
 
-declare type TimelessText = {
-	text:string,
+declare type TextCommon = {
 	language?:string,
 	about?: string,
 }
 
-declare type CaptionItem = TimelessText&{
-	text:string|[(string|TimelessText), ...(string|TimelessText)[]],
+declare type TimelessText = TextCommon&{
+	text:string,
+}
+
+declare type TextOrTextArray = [
+	(string|TimelessText),
+	...(string|TimelessText)[]
+];
+
+declare type CaptionItem = TextCommon&{
+	text:string|TextOrTextArray,
 	speaker?: string[],
 	startTime?: string,
 	endTime?:string,
@@ -281,7 +289,12 @@ function load_await_url() : void
 			);
 		}
 
-		const args:[VideoId, [string, CaptionLineSetting?][]?] = [id];
+		const args:[
+			VideoId,
+			[string|TextOrTextArray, CaptionLineSetting?][]?,
+		] = [
+			id,
+		];
 
 		const data = new FormData(form);
 
@@ -307,7 +320,7 @@ function load_await_url() : void
 					);
 
 					return a_start - b_start;
-				}).map((line_data) => {
+				}).map((line_data) : [string|TextOrTextArray, CaptionLineSetting] => {
 					const start = (
 						(line_data.startTime ?? 'PT0S').replace(
 							/^PT(.+)S$/,
@@ -405,7 +418,7 @@ function load_await_url() : void
 
 function load_editor(
 	id:VideoId,
-	captions:[string, CaptionLineSetting?][] = []
+	captions:[string|TextOrTextArray, CaptionLineSetting?][] = []
 ) : void
 {
 	const node = clone_template('editor');
@@ -471,6 +484,12 @@ function load_editor(
 	const next = (
 		form.querySelector('button#next-line') as HTMLButtonElement|null
 	);
+	const form_about = (
+		form.querySelector('#about') as HTMLInputElement|null
+	);
+	const form_set_about = (
+		form.querySelector('button#set-about') as HTMLButtonElement|null
+	);
 
 	if (
 		! form_speaker
@@ -483,6 +502,10 @@ function load_editor(
 		|| ! form_alignment
 		|| ! speaker_list
 		|| ! line_output
+		|| ! previous
+		|| ! next
+		|| ! form_about
+		|| ! form_set_about
 	) {
 		throw new Error(
 			'Required components of form not found!'
@@ -558,11 +581,38 @@ function load_editor(
 				|| '' === (currentNode.textContent?.trim() + '')
 			) {
 				continue;
-			} else if (currentNode instanceof Text) {
+			} else {
 				let item:CaptionItemHasWebVTT = {
 					text: currentNode.textContent + '',
 					webvtt: {},
 				};
+
+				if (currentNode.childNodes.length > 1) {
+					item.text = [...currentNode.childNodes].map((chunk) => {
+						if (
+							(chunk instanceof HTMLElement)
+							&& 'MARK' === chunk.nodeName
+							&& (
+								'about' in chunk.dataset
+							)
+						) {
+							const chunk_text:TimelessText = {
+								text: chunk.textContent + '',
+							};
+
+							if (
+								'about' in chunk.dataset
+								&& '' !== chunk.dataset.about?.trim()
+							) {
+								chunk_text.about = chunk.dataset.about?.trim();
+							}
+
+							return chunk_text;
+						}
+
+						return chunk.textContent + '';
+					}) as TextOrTextArray;
+				}
 
 				if (settings.has(currentNode)) {
 					const setting = settings.get(
@@ -722,7 +772,21 @@ function load_editor(
 			}${
 				"\n"
 			}${
-				line.text
+				(
+					(
+						line.text instanceof Array
+							? line.text
+							: [line.text]
+					) as TextOrTextArray
+				).map(
+					(chunk) : string => {
+						if ('string' === typeof(chunk)) {
+							return chunk;
+						}
+
+						return chunk.text;
+					}
+				).join('')
 			}${
 				"\n"
 			}`
@@ -754,19 +818,42 @@ function load_editor(
 	}
 
 	document.addEventListener('selectionchange', (e) => {
-		const maybe = getSelection()?.anchorNode as Text|null;
+		const selection = getSelection();
 
-		if (
-			maybe
-			&& (
-				maybe.parentNode === editor
-				|| maybe.parentNode?.parentNode === editor
-			)
-		) {
-			caption_line = maybe;
+		let child_count = editor_iterator().reduce(
+			(child_count:number, node) : number => {
+				if (selection?.containsNode(node)) {
+					++child_count;
+				} else {
+					child_count = [...node.childNodes].reduce(
+						(child_count, child_node) => {
+							if (selection?.containsNode(child_node)) {
+								++child_count;
+							}
 
-			update_settings_from_caption_line();
+							return child_count;
+						},
+						child_count
+					);
+				}
+
+				return child_count;
+			},
+			0
+		);
+
+		if (1 === child_count) {
+			form_set_about.disabled = form_about.validity.valid;
+		} else {
+			form_set_about.disabled = true;
 		}
+	});
+
+	form_set_about.addEventListener('click', () => {
+		const mark = document.createElement('mark');
+		mark.setAttribute('data-about', form_about.value);
+		getSelection()?.getRangeAt(0).surroundContents(mark);
+		update_webvtt(update_jsonld());
 	});
 
 	form.addEventListener('input', (e) => {
@@ -906,14 +993,41 @@ function load_editor(
 	captions.forEach((e) => {
 		const [line, setting] = e;
 
-		const line_node = document.createTextNode(line);
+		const wrapper = document.createElement('div');
 
-		if (setting) {
-			settings.set(line_node, setting);
+		let line_node:Text|DocumentFragment;
+
+		if (line instanceof Array) {
+			line_node = document.createDocumentFragment();
+
+			line.forEach((chunk) => {
+				if ('string' === typeof(chunk)) {
+					line_node.appendChild(document.createTextNode(chunk));
+				} else {
+					const chunk_node = document.createElement('mark');
+
+					chunk_node.appendChild(
+						document.createTextNode(chunk.text)
+					);
+
+					if ('about' in chunk) {
+						chunk_node.dataset.about = chunk.about;
+					}
+
+					line_node.appendChild(chunk_node);
+				}
+			});
+		} else {
+			line_node = document.createTextNode(line);
 		}
 
-		editor.appendChild(line_node);
-		editor.appendChild(document.createTextNode("\n"));
+		wrapper.appendChild(line_node);
+
+		if (setting) {
+			settings.set(wrapper, setting);
+		}
+
+		editor.appendChild(wrapper);
 	});
 
 	const json = update_jsonld();
