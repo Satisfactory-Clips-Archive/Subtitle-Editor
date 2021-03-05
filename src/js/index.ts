@@ -843,7 +843,7 @@ function load_editor(
 		);
 
 		if (1 === child_count) {
-			form_set_about.disabled = form_about.validity.valid;
+			form_set_about.disabled = ! form_about.validity.valid;
 		} else {
 			form_set_about.disabled = true;
 		}
