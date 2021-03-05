@@ -1030,6 +1030,8 @@ function load_editor(
 		editor.appendChild(wrapper);
 	});
 
+	caption_line = editor.firstChild as Text|HTMLElement|null;
+
 	const json = update_jsonld();
 
 	json.text.forEach((item) => {
@@ -1055,6 +1057,8 @@ function load_editor(
 	});
 
 	update_webvtt(json);
+
+	update_settings_from_caption_line();
 
 	main.textContent = '';
 	main.appendChild(node);
