@@ -121,7 +121,7 @@ class CaptionLineSetting
 
 	set start(value:string)
 	{
-		if ( ! numeric.test(value)) {
+		if ('' !== value && ! numeric.test(value)) {
 			throw new Error(
 				`CaptionLineSetting.start must be numeric!`
 			);
@@ -136,7 +136,7 @@ class CaptionLineSetting
 
 	set end(value:string)
 	{
-		if ( ! numeric.test(value)) {
+		if ('' !== value &&  ! numeric.test(value)) {
 			throw new Error(
 				`CaptionLineSetting.end must be numeric!`
 			);

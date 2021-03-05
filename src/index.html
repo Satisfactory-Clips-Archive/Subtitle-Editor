@@ -55,12 +55,17 @@
 					inputmode="decimal"
 					id="start-time"
 					name="start"
-					required
+					pattern="^\d+(?:\.\d+)?$"
 				>
 			</li>
 			<li>
 				<label for="end-time">End Time</label>
-				<input inputmode="decimal" id="end-time" name="end" required>
+				<input
+					inputmode="decimal"
+					id="end-time"
+					name="end"
+					pattern="^\d+(?:\.\d+)?$"
+				>
 			</li>
 			<li>
 				<label

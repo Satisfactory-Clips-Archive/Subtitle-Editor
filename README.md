@@ -7,6 +7,7 @@ Subtitle editor for [archive.satisfactory.video](https://archive.satisfactory.vi
 ## 2020-03-05
 * implemented topic support
 * fix bug with first line not loading
+* make start/end times optional
 
 ## 2020-03-04
 * implemented webvtt line support
