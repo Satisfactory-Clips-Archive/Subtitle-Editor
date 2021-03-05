@@ -8,6 +8,7 @@ Subtitle editor for [archive.satisfactory.video](https://archive.satisfactory.vi
 * implemented topic support
 * fix bug with first line not loading
 * make start/end times optional
+* change pattern of input#about
 
 ## 2020-03-04
 * implemented webvtt line support
