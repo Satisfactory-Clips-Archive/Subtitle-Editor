@@ -928,9 +928,6 @@ function load_editor(
 		);
 
 		setting.speaker = data.get('speaker') + '';
-		console.log(data.get(
-			'follows-on-from-previous'
-		));
 		setting.followsOnFromPrevious = '1' === data.get(
 			'follows-on-from-previous'
 		);
