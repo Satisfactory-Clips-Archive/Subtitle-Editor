@@ -152,12 +152,12 @@ class CaptionLineSetting
 
 	set position(value:number|null)
 	{
+		value = 'string' === typeof(value) ? parseFloat(value) : value;
+
 		if (null === value || isNaN(value)) {
 			this._position = null;
-		} else if ('number' === typeof(value)) {
-			this._position = Math.max(0, value) | 0;
 		} else {
-			this._position = Math.max(0, parseFloat(value)) | 0;
+			this._position = Math.max(0, value) | 0;
 		}
 	}
 
@@ -168,12 +168,12 @@ class CaptionLineSetting
 
 	set line(value:number|null)
 	{
+		value = 'string' === typeof(value) ? parseFloat(value) : value;
+
 		if (null === value || isNaN(value)) {
 			this._line = null;
-		} else if ('number' === typeof(value)) {
-			this._line = Math.max(0, value) | 0;
 		} else {
-			this._line = Math.max(0, parseFloat(value)) | 0;
+			this._line = Math.max(0, value) | 0;
 		}
 	}
 
@@ -184,12 +184,12 @@ class CaptionLineSetting
 
 	set size(value:number|null)
 	{
+		value = 'string' === typeof(value) ? parseFloat(value) : value;
+
 		if (null === value || isNaN(value)) {
 			this._size = null;
-		} else if ('number' === typeof(value)) {
-			this._size = Math.max(0, value) | 0;
 		} else {
-			this._size = Math.max(0, parseFloat(value)) | 0;
+			this._size = Math.max(0, value) | 0;
 		}
 	}
 
@@ -431,10 +431,10 @@ function load_editor(
 	let caption_line:Text|HTMLElement|null;
 	let speakers:string[] = [];
 	let previous_speakers:string[] = [];
-	const last_speaker_positions:{[key:string]: number} = {};
-	const last_speaker_lines:{[key:string]: number} = {};
-	const last_speaker_sizes:{[key:string]: number} = {};
-	const last_speaker_alignment:{[key:string]: string} = {};
+	const last_speaker_positions:{[key:string]: string|null} = {};
+	const last_speaker_lines:{[key:string]: string|null} = {};
+	const last_speaker_sizes:{[key:string]: string|null} = {};
+	const last_speaker_alignment:{[key:string]: string|null} = {};
 
 	if (
 		! editor
@@ -856,50 +856,50 @@ function load_editor(
 		update_webvtt(update_jsonld());
 	});
 
+	form.addEventListener('submit', (e) => {
+		e.preventDefault();
+	});
+
 	form.addEventListener('input', (e) => {
 		const data = new FormData(form);
 
 		const speaker = (data.get('speaker') + '').trim();
-		const position = parseInt(data.get('position') + '');
-		const line = parseInt(data.get('line') + '');
-		const size = parseInt(data.get('size') + '');
-		const alignment = (data.get('alignment') + '').trim();
+		const position = (data.get('position') ?? null) as string|null;
+		const line = (data.get('line') ?? null) as string|null;
+		const size = (data.get('size') ?? null) as string|null;
+		const alignment = (
+			data.get('alignment') || null
+		) as 'start'|'middle'|'end'|null;
 
 		if ('' !== speaker) {
 			if (Number.isNaN(position)) {
 				form_position.value = (
-					last_speaker_positions[speaker]?.toString(10) || ''
+					last_speaker_positions[speaker] ?? ''
 				);
 			} else {
 				last_speaker_positions[speaker] = position;
 			}
 			if (Number.isNaN(line)) {
 				form_line.value = (
-					last_speaker_lines[speaker]?.toString(10) || ''
+					last_speaker_lines[speaker] ?? ''
 				);
 			} else {
 				last_speaker_lines[speaker] = line;
 			}
 			if (Number.isNaN(size)) {
 				form_size.value = (
-					last_speaker_sizes[speaker]?.toString(10) || ''
+					last_speaker_sizes[speaker] ?? ''
 				);
 			} else {
 				last_speaker_sizes[speaker] = size;
 			}
-			if ('' === alignment) {
+			if ('' === (alignment + '')) {
 				form_alignment.value = last_speaker_alignment[speaker] || '';
 			} else {
 				last_speaker_alignment[speaker] = alignment;
 			}
 		}
-	});
 
-	form.addEventListener('submit', (e) => {
-		e.preventDefault();
-	});
-
-	form.addEventListener('input', () => {
 		const maybe = caption_line;
 
 		if (
@@ -916,13 +916,6 @@ function load_editor(
 			return;
 		}
 
-		const data = new FormData(form);
-		const position = (data.get('position') ?? null) as string|null;
-		const line = (data.get('line') ?? null) as string|null;
-		const size = (data.get('size') ?? null) as string|null;
-		const align = (
-			data.get('alignment') || null
-		) as 'start'|'middle'|'end'|null;
 		const setting = settings.get(maybe) || new CaptionLineSetting(
 			'',
 			'0',
@@ -938,7 +931,7 @@ function load_editor(
 		setting.position = null !== position ? parseFloat(position) : null;
 		setting.line = null !== line ? parseFloat(line) : null;
 		setting.size = null !== size ? parseFloat(size) : null;
-		setting.alignment = align;
+		setting.alignment = alignment;
 
 		settings.set(maybe, setting);
 
@@ -1039,13 +1032,13 @@ function load_editor(
 
 			(item.speaker as string[]).forEach((speaker) => {
 				if (webvtt.position) {
-					last_speaker_positions[speaker] = webvtt.position;
+					last_speaker_positions[speaker] = webvtt.position?.toString(10);
 				}
 				if (webvtt.line) {
-					last_speaker_lines[speaker] = webvtt.line;
+					last_speaker_lines[speaker] = webvtt.line?.toString(10);
 				}
 				if (webvtt.size) {
-					last_speaker_sizes[speaker] = webvtt.size;
+					last_speaker_sizes[speaker] = webvtt.size?.toString(10);
 				}
 
 				if (webvtt.align) {
