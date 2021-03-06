@@ -424,11 +424,6 @@ function load_editor(
 ) : void
 {
 	const node = clone_template('editor');
-	const editor = node.querySelector('[contenteditable]') as HTMLElement|null;
-	const embed = node.querySelector('.embed') as HTMLElement|null;
-	const script = node.querySelector('#json-ld') as HTMLTextAreaElement|null;
-	const webvtt = node.querySelector('#webvtt') as HTMLTextAreaElement|null;
-	const form = node.querySelector('form') as HTMLFormElement|null;
 	const settings:WeakMap<Node, CaptionLineSetting> = new WeakMap();
 	let caption_line:Text|HTMLElement|null;
 	let speakers:string[] = [];
@@ -437,6 +432,63 @@ function load_editor(
 	const last_speaker_lines:{[key:string]: string|null} = {};
 	const last_speaker_sizes:{[key:string]: string|null} = {};
 	const last_speaker_alignment:{[key:string]: string|null} = {};
+
+	const [
+		editor,
+		embed,
+		script,
+		webvtt,
+		form,
+		form_speaker,
+		form_followsOnFromPrevious,
+		form_start,
+		form_end,
+		form_position,
+		form_line,
+		form_size,
+		form_alignment,
+		speaker_list,
+		line_output,
+		previous,
+		next,
+		form_about,
+		form_set_about,
+	] = (() : [
+		HTMLElement,
+		HTMLElement,
+		HTMLTextAreaElement,
+		HTMLTextAreaElement,
+		HTMLFormElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLInputElement,
+		HTMLDataListElement,
+		HTMLOutputElement,
+		HTMLButtonElement,
+		HTMLButtonElement,
+		HTMLInputElement,
+		HTMLButtonElement,
+	] => {
+		const editor = (
+			node.querySelector('[contenteditable]') as HTMLElement|null
+		);
+		const embed = (
+			node.querySelector('.embed') as HTMLElement|null
+		);
+		const script = (
+			node.querySelector('#json-ld') as HTMLTextAreaElement|null
+		);
+		const webvtt = (
+			node.querySelector('#webvtt') as HTMLTextAreaElement|null
+		);
+		const form = (
+			node.querySelector('form') as HTMLFormElement|null
+		);
 
 	if (
 		! editor
@@ -513,6 +565,28 @@ function load_editor(
 			'Required components of form not found!'
 		);
 	}
+		return [
+			editor,
+			embed,
+			script,
+			webvtt,
+			form,
+			form_speaker,
+			form_followsOnFromPrevious,
+			form_start,
+			form_end,
+			form_position,
+			form_line,
+			form_size,
+			form_alignment,
+			speaker_list,
+			line_output,
+			previous,
+			next,
+			form_about,
+			form_set_about,
+		];
+	})();
 
 	const iframe = document.createElement('iframe') as HTMLIFrameElement;
 
@@ -544,7 +618,7 @@ function load_editor(
 
 	function editor_iterator() : (Text|HTMLElement)[]
 	{
-		return [...(editor as HTMLElement).childNodes].filter(
+		return [...editor.childNodes].filter(
 			(maybe) : boolean => {
 				if (
 					"\n" !== maybe.textContent
@@ -675,7 +749,7 @@ function load_editor(
 		}
 
 		(
-			script as HTMLTextAreaElement
+			script
 		).textContent = JSON.stringify(jsonld, null, "\t");
 
 		speakers = jsonld.text.reduce(
@@ -696,8 +770,8 @@ function load_editor(
 		).sort();
 
 		if (previous_speakers.join("\n") !== speakers.join("\n")) {
-			(speaker_list as HTMLDataListElement).textContent = '';
-			(speaker_list as HTMLDataListElement).appendChild(
+			speaker_list.textContent = '';
+			speaker_list.appendChild(
 				speakers.reduce(
 					(
 						result:DocumentFragment,
@@ -733,7 +807,7 @@ function load_editor(
 
 	function update_webvtt(jsonld:JsonLdType) : void
 	{
-		(webvtt as HTMLTextAreaElement).textContent = `WEBVTT${
+		webvtt.textContent = `WEBVTT${
 			"\n\n"
 		}${jsonld.text.filter((line) => {
 			return 'startTime' in line && 'endTime' in line;
@@ -795,7 +869,7 @@ function load_editor(
 		}).join("\n")}`;
 	}
 
-	const update_settings_from_caption_line = () : void =>
+	function update_settings_from_caption_line () : void
 	{
 		const maybe = caption_line;
 
@@ -944,7 +1018,7 @@ function load_editor(
 		update_webvtt(update_jsonld());
 	});
 
-	(previous as HTMLButtonElement).addEventListener('click', () => {
+	previous.addEventListener('click', () => {
 		let nodes:(Text|HTMLElement)[] = editor_iterator();
 
 		if (caption_line && nodes.includes(caption_line)) {
@@ -958,7 +1032,7 @@ function load_editor(
 		update_settings_from_caption_line();
 	});
 
-	(next as HTMLButtonElement).addEventListener('click', () => {
+	next.addEventListener('click', () => {
 		const iterator = editor_iterator();
 
 		let use_next_node = false;
