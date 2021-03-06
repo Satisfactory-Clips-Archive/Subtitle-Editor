@@ -490,81 +490,81 @@ function load_editor(
 			node.querySelector('form') as HTMLFormElement|null
 		);
 
-	if (
-		! editor
-		|| ! embed
-		|| ! script
-		|| ! form
-		|| ! webvtt
-	) {
-		throw new Error(
-			'Required components of editor not found!'
-		);
-	}
+		if (
+			! editor
+			|| ! embed
+			|| ! script
+			|| ! form
+			|| ! webvtt
+		) {
+			throw new Error(
+				'Required components of editor not found!'
+			);
+		}
 
-	const form_speaker = (
-		form.querySelector('#speaker') as HTMLInputElement|null
-	);
-	const form_followsOnFromPrevious = (
-		form.querySelector('#follows-on-from-previous') as HTMLInputElement|null
-	);
-	const form_start = (
-		form.querySelector('#start-time') as HTMLInputElement|null
-	);
-	const form_end = (
-		form.querySelector('#end-time') as HTMLInputElement|null
-	);
-	const form_position = (
-		form.querySelector('#position') as HTMLInputElement|null
-	);
-	const form_line = (
-		form.querySelector('#line') as HTMLInputElement|null
-	);
-	const form_size = (
-		form.querySelector('#size') as HTMLInputElement|null
-	);
-	const form_alignment = (
-		form.querySelector('#alignment') as HTMLInputElement|null
-	);
-	const speaker_list = (
-		form.querySelector('#speaker-list') as HTMLDataListElement|null
-	);
-	const line_output = (
-		form.querySelector('output[for="editor"]') as HTMLOutputElement|null
-	);
-	const previous = (
-		form.querySelector('button#previous-line') as HTMLButtonElement|null
-	);
-	const next = (
-		form.querySelector('button#next-line') as HTMLButtonElement|null
-	);
-	const form_about = (
-		form.querySelector('#about') as HTMLInputElement|null
-	);
-	const form_set_about = (
-		form.querySelector('button#set-about') as HTMLButtonElement|null
-	);
-
-	if (
-		! form_speaker
-		|| ! form_followsOnFromPrevious
-		|| ! form_start
-		|| ! form_end
-		|| ! form_position
-		|| ! form_line
-		|| ! form_size
-		|| ! form_alignment
-		|| ! speaker_list
-		|| ! line_output
-		|| ! previous
-		|| ! next
-		|| ! form_about
-		|| ! form_set_about
-	) {
-		throw new Error(
-			'Required components of form not found!'
+		const form_speaker = (
+			form.querySelector('#speaker') as HTMLInputElement|null
 		);
-	}
+		const form_followsOnFromPrevious = (
+			form.querySelector('#follows-on-from-previous') as HTMLInputElement|null
+		);
+		const form_start = (
+			form.querySelector('#start-time') as HTMLInputElement|null
+		);
+		const form_end = (
+			form.querySelector('#end-time') as HTMLInputElement|null
+		);
+		const form_position = (
+			form.querySelector('#position') as HTMLInputElement|null
+		);
+		const form_line = (
+			form.querySelector('#line') as HTMLInputElement|null
+		);
+		const form_size = (
+			form.querySelector('#size') as HTMLInputElement|null
+		);
+		const form_alignment = (
+			form.querySelector('#alignment') as HTMLInputElement|null
+		);
+		const speaker_list = (
+			form.querySelector('#speaker-list') as HTMLDataListElement|null
+		);
+		const line_output = (
+			form.querySelector('output[for="editor"]') as HTMLOutputElement|null
+		);
+		const previous = (
+			form.querySelector('button#previous-line') as HTMLButtonElement|null
+		);
+		const next = (
+			form.querySelector('button#next-line') as HTMLButtonElement|null
+		);
+		const form_about = (
+			form.querySelector('#about') as HTMLInputElement|null
+		);
+		const form_set_about = (
+			form.querySelector('button#set-about') as HTMLButtonElement|null
+		);
+
+		if (
+			! form_speaker
+			|| ! form_followsOnFromPrevious
+			|| ! form_start
+			|| ! form_end
+			|| ! form_position
+			|| ! form_line
+			|| ! form_size
+			|| ! form_alignment
+			|| ! speaker_list
+			|| ! line_output
+			|| ! previous
+			|| ! next
+			|| ! form_about
+			|| ! form_set_about
+		) {
+			throw new Error(
+				'Required components of form not found!'
+			);
+		}
 		return [
 			editor,
 			embed,
@@ -748,9 +748,7 @@ function load_editor(
 			jsonld.text = (items as [CaptionItem, ...CaptionItem[]]);
 		}
 
-		(
-			script
-		).textContent = JSON.stringify(jsonld, null, "\t");
+		script.textContent = JSON.stringify(jsonld, null, "\t");
 
 		speakers = jsonld.text.reduce(
 			(result:string[], item) : string[] => {
@@ -943,9 +941,7 @@ function load_editor(
 		const position = (data.get('position') ?? null) as string|null;
 		const line = (data.get('line') ?? null) as string|null;
 		const size = (data.get('size') ?? null) as string|null;
-		const alignment = (
-			data.get('alignment') || null
-		) as 'start'|'middle'|'end'|null;
+		const alignment = data.get('alignment') as 'start'|'middle'|'end'|null;
 
 		if ('' !== speaker) {
 			if (Number.isNaN(parseInt(position + '', 10))) {
