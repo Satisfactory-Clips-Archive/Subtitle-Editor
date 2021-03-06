@@ -909,6 +909,8 @@ function load_editor(
 				form_line.value = setting.line?.toString(10) || '';
 				form_size.value = setting.size?.toString(10) || '';
 				form_alignment.value = setting.alignment || '';
+
+				form_input_handler();
 			} else {
 				form?.reset();
 			}
@@ -1001,16 +1003,18 @@ function load_editor(
 		e.preventDefault();
 	});
 
-	form.addEventListener('input', (e) => {
-		const data = new FormData(form);
-		const speaker = data.get('speaker') + '';
-		const position = (data.get('position') ?? null) as string|null;
-		const line = (data.get('line') ?? null) as string|null;
-		const size = (data.get('size') ?? null) as string|null;
-		const alignment = data.get('alignment') as 'start'|'middle'|'end'|null;
+	function form_input_handler() {
+		const speaker = form_speaker.value.trim();
+		const position = form_position.value;
+		const line = form_line.value;
+		const size = form_size.value;
+		const alignment = form_alignment.value as 'start'|'middle'|'end'|'';
+		const start = form_start.value;
+		const end = form_end.value;
+		const followsOnFromPrevious = form_followsOnFromPrevious.checked;
 
 		if ('' !== speaker) {
-			if (Number.isNaN(parseInt(position + '', 10))) {
+			if (Number.isNaN(parseInt(position, 10))) {
 				form_position.value = (
 					last_speaker_positions[speaker] ?? ''
 				);
@@ -1053,20 +1057,20 @@ function load_editor(
 		);
 
 		setting.speaker = speaker;
-		setting.followsOnFromPrevious = '1' === data.get(
-			'follows-on-from-previous'
-		);
-		setting.start = data.get('start') + '';
-		setting.end = data.get('end') + '';
+		setting.followsOnFromPrevious = followsOnFromPrevious;
+		setting.start = start;
+		setting.end = end;
 		setting.position = null !== position ? parseFloat(position) : null;
 		setting.line = null !== line ? parseFloat(line) : null;
 		setting.size = null !== size ? parseFloat(size) : null;
-		setting.alignment = alignment;
+		setting.alignment = '' === alignment ? null : alignment;
 
 		settings.set(maybe, setting);
 
 		update_webvtt(update_jsonld());
-	});
+	};
+
+	form.addEventListener('input', form_input_handler);
 
 	editor.addEventListener('input', () => {
 		update_webvtt(update_jsonld());
