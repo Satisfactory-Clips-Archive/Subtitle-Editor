@@ -45,20 +45,33 @@
 
 		> fieldset
 		{
+			flex-basis: 50% ;
+
+			&:nth-child(3)
+			{
+				flex-basis: auto ;
+			}
+
+			&:nth-child(4)
+			{
+				flex-basis: 100% ;
+			}
+
 			> ul,
 			> ol
 			{
 				list-style: inside none ;
-				display: table ;
+				display: block ;
 
 				> li
 				{
-					display: table-row ;
+					display: flex ;
+					flex-wrap: wrap ;
 
 					> label,
 					> input
 					{
-						display: table-cell ;
+						flex-basis: 50%
 					}
 				}
 			}
@@ -104,5 +117,38 @@
 				height: calc(100% - 1.5rem) ;
 			}
 		}
+	}
+
+	dl
+	{
+		display: flex ;
+		flex-wrap: wrap ;
+	}
+
+	dt
+	{
+		flex-basis: 30% ;
+		text-align: right ;
+
+		&::after
+		{
+			content: ': ';
+		}
+	}
+
+	dd
+	{
+		flex-basis: 70% ;
+	}
+
+	#presets-go-here
+	{
+		flex-direction: column ;
+		flex-wrap: wrap ;
+	}
+
+	details > summary
+	{
+		cursor: pointer ;
 	}
 }

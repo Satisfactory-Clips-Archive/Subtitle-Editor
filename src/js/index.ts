@@ -453,6 +453,9 @@ function load_editor(
 		next,
 		form_about,
 		form_set_about,
+		form_speaker_preset,
+		form_add_preset,
+		webvtt_presets_go_here,
 	] = (() : [
 		HTMLElement,
 		HTMLElement,
@@ -473,6 +476,9 @@ function load_editor(
 		HTMLButtonElement,
 		HTMLInputElement,
 		HTMLButtonElement,
+		HTMLInputElement,
+		HTMLButtonElement,
+		HTMLLIElement,
 	] => {
 		const editor = (
 			node.querySelector('[contenteditable]') as HTMLElement|null
@@ -544,6 +550,15 @@ function load_editor(
 		const form_set_about = (
 			form.querySelector('button#set-about') as HTMLButtonElement|null
 		);
+		const form_speaker_preset = (
+			form.querySelector('#speaker-preset') as HTMLInputElement|null
+		);
+		const form_add_preset = (
+			form.querySelector('#add-preset') as HTMLButtonElement|null
+		);
+		const webvtt_presets_go_here = (
+			form.querySelector('#presets-go-here') as HTMLLIElement|null
+		);
 
 		if (
 			! form_speaker
@@ -560,6 +575,9 @@ function load_editor(
 			|| ! next
 			|| ! form_about
 			|| ! form_set_about
+			|| ! form_speaker_preset
+			|| ! form_add_preset
+			|| ! webvtt_presets_go_here
 		) {
 			throw new Error(
 				'Required components of form not found!'
@@ -585,6 +603,9 @@ function load_editor(
 			next,
 			form_about,
 			form_set_about,
+			form_speaker_preset,
+			form_add_preset,
+			webvtt_presets_go_here,
 		];
 	})();
 
@@ -891,6 +912,49 @@ function load_editor(
 		}
 	}
 
+	function render_webvtt_presets() : void
+	{
+		const fragment = document.createDocumentFragment();
+
+		speakers.forEach((speaker) => {
+			const list = document.createElement('dl');
+			const list_contents = document.createDocumentFragment();
+
+			[
+				['Position', last_speaker_positions[speaker] ?? null],
+				['Line', last_speaker_lines[speaker] ?? null],
+				['Size', last_speaker_sizes[speaker] ?? null],
+				['Alignment', last_speaker_alignment[speaker] ?? null],
+			].filter((maybe) => {
+				return null !== maybe[1];
+			}).forEach((e) => {
+				const [title, value] = e;
+
+				const title_element = document.createElement('dt');
+				const value_element = document.createElement('dd');
+
+				title_element.textContent = title;
+				value_element.textContent = value;
+
+				list_contents.appendChild(title_element);
+				list_contents.appendChild(value_element);
+			});
+
+			if (list_contents.childNodes.length > 0) {
+				const details = document.createElement('details');
+				const summary = document.createElement('summary');
+				summary.textContent = speaker;
+				details.appendChild(summary);
+				list.appendChild(list_contents);
+				details.appendChild(list);
+				fragment.appendChild(details);
+			}
+		});
+
+		webvtt_presets_go_here.textContent = '';
+		webvtt_presets_go_here.appendChild(fragment);
+	}
+
 	document.addEventListener('selectionchange', (e) => {
 		const selection = getSelection();
 
@@ -936,8 +1000,7 @@ function load_editor(
 
 	form.addEventListener('input', (e) => {
 		const data = new FormData(form);
-
-		const speaker = (data.get('speaker') + '').trim();
+		const speaker = data.get('speaker') + '';
 		const position = (data.get('position') ?? null) as string|null;
 		const line = (data.get('line') ?? null) as string|null;
 		const size = (data.get('size') ?? null) as string|null;
@@ -948,27 +1011,19 @@ function load_editor(
 				form_position.value = (
 					last_speaker_positions[speaker] ?? ''
 				);
-			} else {
-				last_speaker_positions[speaker] = position;
 			}
 			if (Number.isNaN(parseInt(line + '', 10))) {
 				form_line.value = (
 					last_speaker_lines[speaker] ?? ''
 				);
-			} else {
-				last_speaker_lines[speaker] = line;
 			}
 			if (Number.isNaN(parseInt(size + '', 10))) {
 				form_size.value = (
 					last_speaker_sizes[speaker] ?? ''
 				);
-			} else {
-				last_speaker_sizes[speaker] = size;
 			}
 			if ('' === (alignment + '')) {
 				form_alignment.value = last_speaker_alignment[speaker] || '';
-			} else {
-				last_speaker_alignment[speaker] = alignment;
 			}
 		}
 
@@ -994,7 +1049,7 @@ function load_editor(
 			'0'
 		);
 
-		setting.speaker = data.get('speaker') + '';
+		setting.speaker = speaker;
 		setting.followsOnFromPrevious = '1' === data.get(
 			'follows-on-from-previous'
 		);
@@ -1054,6 +1109,29 @@ function load_editor(
 		update_settings_from_caption_line();
 	});
 
+	form_add_preset.addEventListener('click', () => {
+		const data = new FormData(form);
+
+		const speaker = form_speaker_preset.value.trim();
+		const position = (data.get('position') ?? null) as string|null;
+		const line = (data.get('line') ?? null) as string|null;
+		const size = (data.get('size') ?? null) as string|null;
+		const alignment = data.get('alignment') as 'start'|'middle'|'end'|null;
+
+		if ('' !== speaker) {
+			if ( ! speakers.includes(speaker)) {
+				speakers.push(speaker);
+			}
+
+			last_speaker_positions[speaker] = position;
+			last_speaker_lines[speaker] = line;
+			last_speaker_sizes[speaker] = size;
+			last_speaker_alignment[speaker] = alignment;
+		}
+
+		render_webvtt_presets();
+	});
+
 	captions.forEach((e) => {
 		const [line, setting] = e;
 
@@ -1099,6 +1177,14 @@ function load_editor(
 	const json = update_jsonld();
 
 	json.text.forEach((item) => {
+		if (item.speaker) {
+			item.speaker.forEach((speaker) => {
+				if ( ! speakers.includes(speaker)) {
+					speakers.push(speaker);
+				}
+			});
+		}
+
 		if (item.speaker && item.webvtt) {
 			const webvtt = item.webvtt as CaptionItemWebVTT;
 
@@ -1123,6 +1209,8 @@ function load_editor(
 	update_webvtt(json);
 
 	update_settings_from_caption_line();
+
+	render_webvtt_presets();
 
 	main.textContent = '';
 	main.appendChild(node);

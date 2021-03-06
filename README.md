@@ -7,6 +7,7 @@ Subtitle editor for [archive.satisfactory.video](https://archive.satisfactory.vi
 ## 2020-03-06
 * implemented auto-save
 * removed sorting code
+* rewrote speaker preset code
 
 ## 2020-03-05
 * implemented topic support

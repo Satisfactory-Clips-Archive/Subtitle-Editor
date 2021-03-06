@@ -131,6 +131,14 @@
 				</datalist>
 			</li>
 		</ol>
+		<ul>
+			<li>
+				<label for="speaker-preset">Speaker Preset</label>
+				<input id="speaker-preset">
+				<button type="button" id="add-preset">Add Preset</button>
+			</li>
+			<li id="presets-go-here"></li>
+		</ul>
 	</fieldset>
 	<fieldset>
 		<legend>Segment</legend>
@@ -149,7 +157,7 @@
 			</li>
 		</ul>
 	</fieldset>
-	<fieldset style="width:100%;">
+	<fieldset>
 		<output for="editor"></output>
 		<button type="button" id="previous-line">⏮</button>
 		<button type="button" id="next-line">⏭</button>
