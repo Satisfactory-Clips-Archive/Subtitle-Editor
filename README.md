@@ -4,6 +4,10 @@ Subtitle editor for [archive.satisfactory.video](https://archive.satisfactory.vi
 
 # Changelog
 
+## 2020-03-06
+* implemented auto-save
+* removed sorting code
+
 ## 2020-03-05
 * implemented topic support
 * fix bug with first line not loading
