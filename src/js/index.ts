@@ -897,7 +897,9 @@ function load_editor(
 
 	form.addEventListener('submit', (e) => {
 		e.preventDefault();
+	});
 
+	form.addEventListener('input', () => {
 		const maybe = caption_line;
 
 		if (
