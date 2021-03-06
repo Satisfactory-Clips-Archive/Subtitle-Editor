@@ -121,6 +121,10 @@ class CaptionLineSetting
 
 	set start(value:string)
 	{
+		if (isNaN(parseFloat(value))) {
+			value = '';
+		}
+
 		if ('' !== value && ! numeric.test(value)) {
 			throw new Error(
 				`CaptionLineSetting.start must be numeric!`
@@ -136,6 +140,10 @@ class CaptionLineSetting
 
 	set end(value:string)
 	{
+		if (isNaN(parseFloat(value))) {
+			value = '';
+		}
+
 		if ('' !== value &&  ! numeric.test(value)) {
 			throw new Error(
 				`CaptionLineSetting.end must be numeric!`
@@ -311,16 +319,10 @@ function load_await_url() : void
 
 				await validator(json_data);
 
-				args[1] = json_data.text.sort((a, b) => {
-					const a_start = parseFloat(
-						(a.startTime ?? 'PT0S').replace(/^PT(.+)S$/, '$1')
-					);
-					const b_start = parseFloat(
-						(b.startTime ?? 'PT0S').replace(/^PT(.+)S$/, '$1')
-					);
-
-					return a_start - b_start;
-				}).map((line_data) : [string|TextOrTextArray, CaptionLineSetting] => {
+				args[1] = json_data.text.map(
+					(
+						line_data
+					) : [string|TextOrTextArray, CaptionLineSetting] => {
 					const start = (
 						(line_data.startTime ?? 'PT0S').replace(
 							/^PT(.+)S$/,
@@ -872,21 +874,21 @@ function load_editor(
 		) as 'start'|'middle'|'end'|null;
 
 		if ('' !== speaker) {
-			if (Number.isNaN(position)) {
+			if (Number.isNaN(parseInt(position + '', 10))) {
 				form_position.value = (
 					last_speaker_positions[speaker] ?? ''
 				);
 			} else {
 				last_speaker_positions[speaker] = position;
 			}
-			if (Number.isNaN(line)) {
+			if (Number.isNaN(parseInt(line + '', 10))) {
 				form_line.value = (
 					last_speaker_lines[speaker] ?? ''
 				);
 			} else {
 				last_speaker_lines[speaker] = line;
 			}
-			if (Number.isNaN(size)) {
+			if (Number.isNaN(parseInt(size + '', 10))) {
 				form_size.value = (
 					last_speaker_sizes[speaker] ?? ''
 				);
