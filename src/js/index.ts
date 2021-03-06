@@ -622,6 +622,9 @@ function load_editor(
 			fs: '0',
 			modestbranding: '0',
 			playsinline: '1',
+			loop: '1',
+			rel: '0',
+			widget_referer: location.toString(),
 		});
 
 		iframe.src = `https://www.youtube.com/embed/${id.id}?${urlparams}`;
