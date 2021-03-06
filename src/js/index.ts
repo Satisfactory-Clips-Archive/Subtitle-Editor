@@ -431,7 +431,7 @@ function load_editor(
 	const last_speaker_positions:{[key:string]: string|null} = {};
 	const last_speaker_lines:{[key:string]: string|null} = {};
 	const last_speaker_sizes:{[key:string]: string|null} = {};
-	const last_speaker_alignment:{[key:string]: string|null} = {};
+	const last_speaker_alignment:{[key:string]: 'start'|'middle'|'end'|null} = {};
 
 	const [
 		editor,
@@ -1005,32 +1005,34 @@ function load_editor(
 
 	function form_input_handler() {
 		const speaker = form_speaker.value.trim();
-		const position = form_position.value;
-		const line = form_line.value;
-		const size = form_size.value;
-		const alignment = form_alignment.value as 'start'|'middle'|'end'|'';
+		let position = form_position.value;
+		let line = form_line.value;
+		let size = form_size.value;
+		let alignment = form_alignment.value as 'start'|'middle'|'end'|'';
 		const start = form_start.value;
 		const end = form_end.value;
 		const followsOnFromPrevious = form_followsOnFromPrevious.checked;
 
 		if ('' !== speaker) {
 			if (Number.isNaN(parseInt(position, 10))) {
-				form_position.value = (
+				position = form_position.value = (
 					last_speaker_positions[speaker] ?? ''
 				);
 			}
 			if (Number.isNaN(parseInt(line + '', 10))) {
-				form_line.value = (
+				line = form_line.value = (
 					last_speaker_lines[speaker] ?? ''
 				);
 			}
 			if (Number.isNaN(parseInt(size + '', 10))) {
-				form_size.value = (
+				size = form_size.value = (
 					last_speaker_sizes[speaker] ?? ''
 				);
 			}
 			if ('' === (alignment + '')) {
-				form_alignment.value = last_speaker_alignment[speaker] || '';
+				alignment = form_alignment.value = (
+					last_speaker_alignment[speaker] || ''
+				);
 			}
 		}
 
